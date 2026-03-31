@@ -1,0 +1,219 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #080c14 0%, #0d1828 50%, #080c14 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* NAV */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  margin-bottom: 4rem;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--cyan);
+  letter-spacing: 0.05em;
+}
+
+.navRight {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* HERO */
+.hero {
+  margin-bottom: 5rem;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--cyan-dim);
+  border: 1px solid var(--border-c);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--cyan);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: pulseDot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin-bottom: 1.25rem;
+}
+
+.title span { color: var(--cyan); }
+
+.sub {
+  font-size: 1rem;
+  color: var(--muted2);
+  line-height: 1.75;
+  max-width: 520px;
+  margin-bottom: 2.5rem;
+}
+
+.cta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.skillCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 500px;
+}
+
+.cloudTag {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.05em;
+}
+
+/* ROLE CARDS */
+.roleSection { margin-bottom: 4rem; }
+
+.rolesLabel {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.roleCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .roleCards { grid-template-columns: 1fr; }
+}
+
+.roleCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.roleCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--cyan);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+
+.roleCard:hover {
+  border-color: var(--border-c);
+  transform: translateY(-3px);
+}
+
+.roleCard:hover::before { transform: scaleX(1); }
+
+.roleIcon { font-size: 1.75rem; margin-bottom: 0.75rem; }
+
+.roleTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+
+.roleDesc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.roleAction {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--cyan);
+  letter-spacing: 0.08em;
+  margin-top: 1rem;
+}
+
+/* STATS */
+.statsBar {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.stat { text-align: left; }
+
+.statNum {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.statLbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  letter-spacing: 0.05em;
+}

@@ -1,0 +1,104 @@
+.nav {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--cyan);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--cyan-dim);
+  border: 1.5px solid var(--border-c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--cyan);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  border: 1px solid var(--border-c);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.1em;
+  display: inline-block;
+}
+
+.logout {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.logout:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.notifBell {
+  position: relative;
+  cursor: default;
+  display: flex;
+  align-items: center;
+}
+
+.bellIcon { font-size: 16px; }
+
+.notifCount {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--cyan);
+  color: #080c14;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
