@@ -217,3 +217,12 @@
   margin-top: 0.2rem;
   letter-spacing: 0.05em;
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .inner { padding: 0 1rem 3rem; }
+  .nav { margin-bottom: 2.5rem; }
+  .hero { margin-bottom: 3rem; }
+  .statsBar { gap: 1.5rem; }
+  .roleCards { grid-template-columns: 1fr; }
+}

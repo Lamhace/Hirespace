@@ -388,3 +388,13 @@
   padding: 0 3px;
   margin-left: 0.35rem;
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .body { padding: 1.5rem 1rem; }
+  .profileGrid { grid-template-columns: 1fr; }
+  .statsRow { grid-template-columns: 1fr 1fr; }
+  .profileTop { flex-wrap: wrap; }
+  .rateBadge { margin-top: 0.5rem; }
+  .tabs { width: 100%; }
+}

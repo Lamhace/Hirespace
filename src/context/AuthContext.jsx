@@ -11,7 +11,7 @@ import {
   updateDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import {
-  ref, push, onValue, off, serverTimestamp as rtServerTimestamp,
+  ref, push, onValue, off, serverTimestamp as rtServerTimestamp, set as rtSet,
 } from "firebase/database";
 import { auth, db, rtdb } from "../firebase";
 
@@ -99,18 +99,15 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Logout
   const logout = async () => { await signOut(auth); setProfile(null); };
 
   // Proposals
   const sendProposal = async (proposal) => {
     await addDoc(collection(db, "proposals"), { ...proposal, status: "pending", createdAt: serverTimestamp() });
   };
-
   const respondToProposal = async (proposalId, status) => {
     await updateDoc(doc(db, "proposals", proposalId), { status });
   };
-
   const getWorkerProposals   = () => proposals.filter((p) => p.workerId   === user?.uid);
   const getEmployerProposals = () => proposals.filter((p) => p.employerId === user?.uid);
 
@@ -118,25 +115,31 @@ export function AuthProvider({ children }) {
   const depositEscrow = async (escrowData) => {
     await setDoc(doc(db, "escrows", escrowData.proposalId), { ...escrowData, updatedAt: serverTimestamp() }, { merge: true });
   };
-
   const getEscrow = async (proposalId) => {
     const snap = await getDoc(doc(db, "escrows", proposalId));
     return snap.exists() ? snap.data() : null;
   };
 
-  // Realtime Chat
-  const sendMessage = (proposalId, message) => {
-    push(ref(rtdb, `chats/${proposalId}`), { ...message, timestamp: rtServerTimestamp() });
+  // Realtime Chat — fixed: use string path, not ref() as variable name conflict
+  const sendMessage = async (proposalId, message) => {
+    const chatRef = ref(rtdb, `chats/${proposalId}/messages`);
+    await push(chatRef, {
+      ...message,
+      timestamp: Date.now(),
+    });
   };
 
   const subscribeToMessages = (proposalId, callback) => {
-    const chatRef = ref(rtdb, `chats/${proposalId}`);
-    onValue(chatRef, (snap) => {
+    const chatRef = ref(rtdb, `chats/${proposalId}/messages`);
+    const handler = onValue(chatRef, (snap) => {
       const data = snap.val();
       if (!data) { callback([]); return; }
       const msgs = Object.entries(data).map(([id, val]) => ({ id, ...val }));
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       callback(msgs);
+    }, (error) => {
+      console.error("Chat error:", error);
+      callback([]);
     });
     return () => off(chatRef);
   };

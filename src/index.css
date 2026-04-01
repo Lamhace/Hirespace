@@ -89,3 +89,10 @@ textarea {
 
 .fade-up { animation: fadeUp 0.45s ease forwards; }
 .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── GLOBAL RESPONSIVE ──────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px; /* prevent iOS zoom on focus */
+  }
+}

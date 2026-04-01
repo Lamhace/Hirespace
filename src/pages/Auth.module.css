@@ -160,3 +160,47 @@
 }
 
 .switchLink:hover { opacity: 0.75; }
+
+/* Password field with eye toggle */
+.passwordWrap { display: flex; flex-direction: column; }
+.passwordWrap label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.passwordField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordField input {
+  padding-right: 3rem;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+  width: auto;
+}
+
+.eyeBtn:hover { color: var(--text); }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .box { padding: 1.75rem 1.25rem; border-radius: 16px; }
+  .title { font-size: 1.35rem; }
+  .row { grid-template-columns: 1fr; }
+}

@@ -131,3 +131,15 @@
 .hireBtn:hover {
   background: var(--cyan-dim);
 }
+
+.distance {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: #4ade80;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .card { padding: 1rem; }
+}
