@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
@@ -12,21 +12,30 @@ export default function Login() {
   const [error,     setError]     = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const { login, user, profile } = useAuth();
+  const navigate = useNavigate();
+
+  // If already logged in, go straight to dashboard
+  useEffect(() => {
+    if (user && profile) {
+      navigate(profile.role === "worker" ? "/worker" : "/employer", { replace: true });
+    }
+  }, [user, profile, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email || !password) { setError("Please enter your email and password."); return; }
+
     setIsLoading(true);
     const result = await login(email, password, role);
     if (result.success) {
-      navigate(result.role === "worker" ? "/worker" : "/employer");
+      // Navigate immediately using returned role
+      navigate(result.role === "worker" ? "/worker" : "/employer", { replace: true });
     } else {
       setError(result.error || "Login failed.");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -41,19 +50,27 @@ export default function Login() {
         <p className={styles.sub}>Log in to your <span style={{ color:"var(--cyan)" }}>HireSpace</span> account.</p>
 
         <div className={styles.roleToggle} style={{ marginBottom:"1.5rem" }}>
-          <button type="button" className={`${styles.toggleBtn} ${role === "worker"   ? styles.active : ""}`} onClick={() => setRole("worker")}>👷 Worker</button>
-          <button type="button" className={`${styles.toggleBtn} ${role === "employer" ? styles.active : ""}`} onClick={() => setRole("employer")}>🏢 Employer</button>
+          <button type="button" className={`${styles.toggleBtn} ${role==="worker"?styles.active:""}`} onClick={() => setRole("worker")}>👷 Worker</button>
+          <button type="button" className={`${styles.toggleBtn} ${role==="employer"?styles.active:""}`} onClick={() => setRole("employer")}>🏢 Employer</button>
         </div>
 
         {error && <div className={styles.error}>{error}</div>}
 
         <form className={styles.form} onSubmit={handleSubmit}>
-          <div><label>Email</label><input type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div>
+            <label>Email</label>
+            <input type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
 
           <div className={styles.passwordWrap}>
             <label>Password</label>
             <div className={styles.passwordField}>
-              <input type={showPass ? "text" : "password"} placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input
+                type={showPass?"text":"password"}
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
               <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>
                 {showPass ? "🙈" : "👁️"}
               </button>
@@ -63,6 +80,7 @@ export default function Login() {
           <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading}>
             {isLoading ? "Logging in..." : "Log In →"}
           </Button>
+
           <p className={styles.switch}>No account? <Link to="/signup" className={styles.switchLink}>Sign up free</Link></p>
         </form>
       </div>
