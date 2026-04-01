@@ -1,140 +1,155 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  doc, setDoc, getDoc, collection,
+  query, where, onSnapshot,
+  updateDoc, addDoc, serverTimestamp,
+} from "firebase/firestore";
+import {
+  ref, push, onValue, off, serverTimestamp as rtServerTimestamp,
+} from "firebase/database";
+import { auth, db, rtdb } from "../firebase";
 
 const AuthContext = createContext(null);
 
-const load = (key, fallback) => {
-  try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
-  catch { return fallback; }
-};
-
-const DEFAULT_WORKERS = [
-  { id: 1, firstName: "Amaka",  lastName: "Kalu",   fullName: "Amaka Kalu",   initials: "AK", location: "Abuja, Nigeria",         bio: "Creative UI/UX designer with 4 years of experience crafting beautiful digital products.",       rate: "35", portfolio: "https://amakakalu.design", skills: ["UI/UX","Figma","React"],             email: "amaka@email.com",  role: "worker" },
-  { id: 2, firstName: "Tunde",  lastName: "Badmus", fullName: "Tunde Badmus", initials: "TB", location: "Lagos, Nigeria",          bio: "Full-stack developer specialising in scalable backend systems and clean APIs.",                  rate: "45", portfolio: "https://tundecodes.dev",    skills: ["Node.js","Python","TypeScript"],      email: "tunde@email.com",  role: "worker" },
-  { id: 3, firstName: "Chisom", lastName: "Eze",    fullName: "Chisom Eze",   initials: "CE", location: "Port Harcourt, Nigeria",  bio: "SEO strategist and content writer helping brands rank higher and convert better.",               rate: "20", portfolio: "",                           skills: ["SEO","Copywriting"],                  email: "chisom@email.com", role: "worker" },
-];
-
 export function AuthProvider({ children }) {
-  const [user,      setUser]      = useState(() => load("hs_user",      null));
-  const [workers,   setWorkers]   = useState(() => load("hs_workers",   DEFAULT_WORKERS));
-  const [proposals, setProposals] = useState(() => load("hs_proposals", []));
-  const [messages,  setMessages]  = useState(() => load("hs_messages",  []));
-  const [escrows,   setEscrows]   = useState(() => load("hs_escrows",   []));
-  const [readLog,   setReadLog]   = useState(() => load("hs_readlog",   {}));
+  const [user,      setUser]      = useState(null);
+  const [profile,   setProfile]   = useState(null);
+  const [workers,   setWorkers]   = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [loading,   setLoading]   = useState(true);
 
-  // ── Persist to localStorage ──────────────────────────────────────────────
+  // Auth state listener
   useEffect(() => {
-    if (user) localStorage.setItem("hs_user", JSON.stringify(user));
-    else localStorage.removeItem("hs_user");
-  }, [user]);
-
-  useEffect(() => { localStorage.setItem("hs_workers",   JSON.stringify(workers));   }, [workers]);
-  useEffect(() => { localStorage.setItem("hs_proposals", JSON.stringify(proposals)); }, [proposals]);
-  useEffect(() => { localStorage.setItem("hs_messages",  JSON.stringify(messages));  }, [messages]);
-  useEffect(() => { localStorage.setItem("hs_escrows",   JSON.stringify(escrows));   }, [escrows]);
-  useEffect(() => { localStorage.setItem("hs_readlog",   JSON.stringify(readLog));   }, [readLog]);
-
-  // ── Cross-tab sync via storage event ─────────────────────────────────────
-  // When another tab writes to localStorage (e.g. worker sends a message),
-  // this fires in the employer's tab and pulls in the latest data instantly.
-  const syncFromStorage = useCallback((e) => {
-    if (!e.key) return;
-    const map = {
-      hs_messages:  setMessages,
-      hs_proposals: setProposals,
-      hs_escrows:   setEscrows,
-      hs_workers:   setWorkers,
-      hs_readlog:   setReadLog,
-    };
-    if (map[e.key] && e.newValue) {
-      try { map[e.key](JSON.parse(e.newValue)); } catch {}
-    }
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const snap = await getDoc(doc(db, "users", firebaseUser.uid));
+        if (snap.exists()) setProfile(snap.data());
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
+  // Live workers list
   useEffect(() => {
-    window.addEventListener("storage", syncFromStorage);
-    return () => window.removeEventListener("storage", syncFromStorage);
-  }, [syncFromStorage]);
-
-  // ── Auth ─────────────────────────────────────────────────────────────────
-  const signup = (formData) => {
-    const newUser = { ...formData, id: Date.now(), createdAt: new Date().toISOString() };
-    setUser(newUser);
-    if (formData.role === "worker") setWorkers((prev) => [...prev, newUser]);
-    return newUser;
-  };
-
-  const login = (email, role) => {
-    if (role === "worker") {
-      const found = workers.find((w) => w.email === email);
-      if (found) { setUser(found); return { success: true }; }
-      return { success: false, error: "No worker account found with that email." };
-    }
-    const emp = { id: Date.now(), role: "employer", firstName: "Demo", lastName: "Employer", fullName: "Demo Employer", initials: "DE", email, company: "Demo Corp" };
-    setUser(emp);
-    return { success: true };
-  };
-
-  const logout = () => setUser(null);
-
-  // ── Proposals ────────────────────────────────────────────────────────────
-  const sendProposal       = (p)  => setProposals((prev) => [p, ...prev]);
-  const respondToProposal  = (id, status) => setProposals((prev) => prev.map((p) => p.id === id ? { ...p, status } : p));
-  const getWorkerProposals  = (wId) => proposals.filter((p) => p.workerId   === wId);
-  const getEmployerProposals = (eId) => proposals.filter((p) => p.employerId === eId);
-
-  // ── Messages ─────────────────────────────────────────────────────────────
-  const sendMessage  = (msg) => setMessages((prev) => [...prev, msg]);
-  const getMessages  = (proposalId) => messages.filter((m) => m.proposalId === proposalId);
-
-  // Unread count: messages in a proposal chat NOT sent by the current user
-  // that arrived after the last time this user marked the chat as read.
-  const getUnreadCount = (proposalId) => {
-    if (!user) return 0;
-    const lastRead = readLog[`${user.id}_${proposalId}`] || 0;
-    return messages.filter(
-      (m) => m.proposalId === proposalId &&
-             m.senderId !== user.id &&
-             new Date(m.timestamp).getTime() > lastRead
-    ).length;
-  };
-
-  // Call this when a user opens the chat panel for a proposal
-  const markAsRead = (proposalId) => {
-    if (!user) return;
-    setReadLog((prev) => ({
-      ...prev,
-      [`${user.id}_${proposalId}`]: Date.now(),
-    }));
-  };
-
-  // Total unread across ALL of the current user's accepted chats
-  const totalUnread = () => {
-    if (!user) return 0;
-    const myProposals = user.role === "worker"
-      ? proposals.filter((p) => p.workerId   === user.id && p.status === "accepted")
-      : proposals.filter((p) => p.employerId === user.id && p.status === "accepted");
-    return myProposals.reduce((sum, p) => sum + getUnreadCount(p.id), 0);
-  };
-
-  // ── Escrow ───────────────────────────────────────────────────────────────
-  const depositEscrow = (escrow) =>
-    setEscrows((prev) => {
-      const idx = prev.findIndex((e) => e.proposalId === escrow.proposalId);
-      if (idx >= 0) { const u = [...prev]; u[idx] = escrow; return u; }
-      return [...prev, escrow];
+    const q = query(collection(db, "users"), where("role", "==", "worker"));
+    const unsub = onSnapshot(q, (snap) => {
+      setWorkers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
+    return () => unsub();
+  }, []);
 
-  const getEscrow = (proposalId) => escrows.find((e) => e.proposalId === proposalId) || null;
+  // Live proposals for current user
+  useEffect(() => {
+    if (!user || !profile) return;
+    const field = profile.role === "worker" ? "workerId" : "employerId";
+    const q = query(collection(db, "proposals"), where(field, "==", user.uid));
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setProposals(docs);
+    });
+    return () => unsub();
+  }, [user, profile]);
+
+  // Signup
+  const signup = async (formData) => {
+    const { email, password, ...rest } = formData;
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid  = cred.user.uid;
+    const initials = ((rest.firstName?.[0] || "") + (rest.lastName?.[0] || "")).toUpperCase() || "U";
+    const fullName = [rest.firstName, rest.lastName].filter(Boolean).join(" ");
+    const userProfile = { ...rest, uid, email, fullName, initials, createdAt: new Date().toISOString() };
+    await setDoc(doc(db, "users", uid), userProfile);
+    setProfile(userProfile);
+    return userProfile;
+  };
+
+  // Login
+  const login = async (email, password, role) => {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
+      if (!snap.exists()) { await signOut(auth); return { success: false, error: "Account not found." }; }
+      const profileData = snap.data();
+      if (profileData.role !== role) {
+        await signOut(auth);
+        return { success: false, error: `This account is registered as a ${profileData.role}, not a ${role}.` };
+      }
+      setProfile(profileData);
+      return { success: true, role: profileData.role };
+    } catch (err) {
+      const msgs = {
+        "auth/user-not-found":     "No account found with this email.",
+        "auth/wrong-password":     "Incorrect password.",
+        "auth/invalid-email":      "Invalid email address.",
+        "auth/invalid-credential": "Incorrect email or password.",
+      };
+      return { success: false, error: msgs[err.code] || "Login failed. Please try again." };
+    }
+  };
+
+  // Logout
+  const logout = async () => { await signOut(auth); setProfile(null); };
+
+  // Proposals
+  const sendProposal = async (proposal) => {
+    await addDoc(collection(db, "proposals"), { ...proposal, status: "pending", createdAt: serverTimestamp() });
+  };
+
+  const respondToProposal = async (proposalId, status) => {
+    await updateDoc(doc(db, "proposals", proposalId), { status });
+  };
+
+  const getWorkerProposals   = () => proposals.filter((p) => p.workerId   === user?.uid);
+  const getEmployerProposals = () => proposals.filter((p) => p.employerId === user?.uid);
+
+  // Escrow
+  const depositEscrow = async (escrowData) => {
+    await setDoc(doc(db, "escrows", escrowData.proposalId), { ...escrowData, updatedAt: serverTimestamp() }, { merge: true });
+  };
+
+  const getEscrow = async (proposalId) => {
+    const snap = await getDoc(doc(db, "escrows", proposalId));
+    return snap.exists() ? snap.data() : null;
+  };
+
+  // Realtime Chat
+  const sendMessage = (proposalId, message) => {
+    push(ref(rtdb, `chats/${proposalId}`), { ...message, timestamp: rtServerTimestamp() });
+  };
+
+  const subscribeToMessages = (proposalId, callback) => {
+    const chatRef = ref(rtdb, `chats/${proposalId}`);
+    onValue(chatRef, (snap) => {
+      const data = snap.val();
+      if (!data) { callback([]); return; }
+      const msgs = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+      msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      callback(msgs);
+    });
+    return () => off(chatRef);
+  };
 
   return (
     <AuthContext.Provider value={{
-      user, workers, proposals, messages, escrows,
+      user, profile, workers, proposals, loading,
       signup, login, logout,
       sendProposal, respondToProposal, getWorkerProposals, getEmployerProposals,
-      sendMessage, getMessages, getUnreadCount, markAsRead, totalUnread,
       depositEscrow, getEscrow,
+      sendMessage, subscribeToMessages,
     }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

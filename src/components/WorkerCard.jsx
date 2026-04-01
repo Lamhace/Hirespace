@@ -4,7 +4,7 @@ import ProposalModal from "./ProposalModal";
 import styles from "./WorkerCard.module.css";
 
 export default function WorkerCard({ worker }) {
-  const { user, sendProposal } = useAuth();
+  const { profile, sendProposal } = useAuth();
   const [showModal, setShowModal] = useState(false);
 
   return (
@@ -17,40 +17,24 @@ export default function WorkerCard({ worker }) {
             <div className={styles.location}>📍 {worker.location}</div>
           </div>
         </div>
-
         <p className={styles.bio}>{worker.bio}</p>
-
         <div className={styles.skills}>
-          {worker.skills.slice(0, 4).map((s) => (
-            <span key={s} className={styles.skill}>{s}</span>
-          ))}
-          {worker.skills.length > 4 && (
-            <span className={styles.more}>+{worker.skills.length - 4}</span>
-          )}
+          {worker.skills?.slice(0,4).map((s) => <span key={s} className={styles.skill}>{s}</span>)}
+          {worker.skills?.length > 4 && <span className={styles.more}>+{worker.skills.length - 4}</span>}
         </div>
-
         <div className={styles.footer}>
           <span className={styles.rate}>${worker.rate}<span>/hr</span></span>
-          {worker.portfolio && (
-            <a href={worker.portfolio} target="_blank" rel="noreferrer" className={styles.portfolioLink}>
-              Portfolio →
-            </a>
-          )}
+          {worker.portfolio && <a href={worker.portfolio} target="_blank" rel="noreferrer" className={styles.portfolioLink}>Portfolio →</a>}
         </div>
-
-        <button className={styles.hireBtn} onClick={() => setShowModal(true)}>
-          Contact Worker →
-        </button>
+        <button className={styles.hireBtn} onClick={() => setShowModal(true)}>Contact Worker →</button>
       </div>
 
       {showModal && (
         <ProposalModal
           worker={worker}
-          employer={user}
+          employer={profile}
           onClose={() => setShowModal(false)}
-          onSend={(proposal) => {
-            sendProposal(proposal);
-          }}
+          onSend={sendProposal}
         />
       )}
     </>
