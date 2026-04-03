@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "chats": {
+      "$proposalId": {
+        "messages": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}
