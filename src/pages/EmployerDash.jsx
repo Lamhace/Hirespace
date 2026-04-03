@@ -30,7 +30,8 @@ export default function EmployerDash() {
   if (!profile) return null;
 
   const myProposals = getEmployerProposals();
-  const activeDeals = myProposals.filter((p) => p.status === "accepted");
+  const activeDeals   = myProposals.filter((p) => p.status === "accepted");
+  const archivedDeals = myProposals.filter((p) => p.status === "archived");
 
   const requestLocation = () => {
     setLocLoading(true);
@@ -167,6 +168,39 @@ export default function EmployerDash() {
             )}
           </div>
         )}
+      </div>
+
+        {tab === "archived" && (
+          <div className={styles.dealsList}>
+            {archivedDeals.length === 0 ? (
+              <div className={styles.empty}>
+                <p>No archived deals yet.</p>
+                <span>Completed deals are automatically archived when their timeframe ends.</span>
+              </div>
+            ) : (
+              archivedDeals.map((p) => (
+                <div key={p.id} className={styles.archivedCard}>
+                  <div className={styles.dealTop}>
+                    <div className={styles.dealWorker}>
+                      <div className={styles.dealAvatar}>{p.workerName?.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase()}</div>
+                      <div>
+                        <div className={styles.dealName}>{p.workerName}</div>
+                        <div className={styles.dealSub}>{p.archiveReason || "Deal completed"}</div>
+                      </div>
+                    </div>
+                    <span className={styles.archivedBadge}>ARCHIVED</span>
+                  </div>
+                  <div className={styles.dealMeta}>
+                    {p.budget && <span>💰 {p.budget}</span>}
+                    {p.timeline && <span>🗓 {p.timeline}</span>}
+                    {p.archivedAt && <span>📅 Archived {new Date(p.archivedAt).toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"})}</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
       </div>
 
       {activeChat && <ChatBox proposal={activeChat} onClose={() => setActiveChat(null)} />}

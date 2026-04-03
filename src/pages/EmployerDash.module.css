@@ -99,3 +99,15 @@
   .locationPrompt { flex-direction: column; align-items: flex-start; }
   .locationActive { flex-direction: column; align-items: flex-start; }
 }
+
+.archivedCard {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-left: 3px solid var(--muted); border-radius: var(--radius);
+  padding: 1.25rem; opacity: 0.75;
+}
+
+.archivedBadge {
+  font-family: var(--display); font-size: 0.6rem; font-weight: 600;
+  letter-spacing: 0.1em; color: var(--muted); background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: var(--radius-pill);
+}

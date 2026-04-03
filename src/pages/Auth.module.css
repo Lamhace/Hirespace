@@ -204,3 +204,44 @@
   .title { font-size: 1.35rem; }
   .row { grid-template-columns: 1fr; }
 }
+
+/* Avatar upload */
+.avatarSection {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem; background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.avatarPreview {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--cyan-dim); border: 2px solid var(--border-c);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden;
+  flex-shrink: 0; transition: all 0.2s;
+}
+
+.avatarPreview:hover .avatarOverlay { opacity: 1; }
+
+.avatarImg { width: 100%; height: 100%; object-fit: cover; }
+
+.avatarInitials {
+  font-family: var(--display); font-size: 1.1rem; color: var(--cyan); font-weight: 700;
+}
+
+.avatarOverlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; opacity: 0; transition: opacity 0.2s;
+}
+
+.avatarInfo { flex: 1; }
+.avatarLabel { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+.avatarHint  { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.5rem; }
+
+.avatarBtn {
+  font-family: var(--display); font-size: 0.72rem; font-weight: 600;
+  color: var(--cyan); background: var(--cyan-dim); border: 1px solid var(--border-c);
+  border-radius: var(--radius-pill); padding: 0.3rem 0.85rem; cursor: pointer; transition: all 0.2s;
+}
+.avatarBtn:hover { background: var(--cyan-mid); }

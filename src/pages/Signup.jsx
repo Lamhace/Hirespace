@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
@@ -25,6 +25,10 @@ export default function Signup() {
   const [showPass,  setShowPass]  = useState(false);
   const [error,     setError]     = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarBase64, setAvatarBase64] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const fileInputRef = useRef(null);
+
   const [form, setForm] = useState({
     firstName:"", lastName:"", email:"", password:"",
     location:"", bio:"", rate:"", portfolio:"", company:"", industry:"",
@@ -33,56 +37,55 @@ export default function Signup() {
   const { signup, user, profile } = useAuth();
   const navigate = useNavigate();
 
-  // If already logged in, redirect to correct dashboard
   useEffect(() => {
-    if (user && profile) {
-      navigate(profile.role === "worker" ? "/worker" : "/employer", { replace: true });
-    }
+    if (user && profile) navigate(profile.role === "worker" ? "/worker" : "/employer", { replace: true });
   }, [user, profile, navigate]);
 
   useEffect(() => { const r = params.get("role"); if (r) setRole(r); }, [params]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
   const toggleSkill = (skill) =>
     setSelectedSkills((prev) => prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { setError("Image must be under 2MB."); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAvatarBase64(ev.target.result);
+      setAvatarPreview(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!form.firstName || !form.email || !form.password) {
-      setError("Please fill in all required fields."); return;
-    }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters."); return;
-    }
-    if (role === "worker" && selectedSkills.length === 0) {
-      setError("Please select at least one job category."); return;
-    }
+    if (!form.firstName || !form.email || !form.password) { setError("Please fill in all required fields."); return; }
+    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (role === "worker" && selectedSkills.length === 0) { setError("Please select at least one job category."); return; }
 
     setIsLoading(true);
     try {
       const newProfile = await signup({
-        role,
-        firstName: form.firstName,
-        lastName:  form.lastName,
-        email:     form.email,
-        password:  form.password,
-        location:  form.location  || "Nigeria",
-        bio:       form.bio       || "A passionate professional ready to work.",
-        rate:      form.rate      || "0",
-        currency,
+        role, firstName: form.firstName, lastName: form.lastName,
+        email: form.email, password: form.password,
+        location: form.location || "Nigeria",
+        bio: form.bio || "A passionate professional ready to work.",
+        rate: form.rate || "0", currency,
         portfolio: form.portfolio || "",
-        skills:    selectedSkills,
-        company:   form.company   || "",
-        industry:  form.industry  || "",
+        skills: selectedSkills,
+        company: form.company || "", industry: form.industry || "",
+        avatarBase64: avatarBase64 || "",
       });
-      // Navigate immediately using the returned profile role
       navigate(newProfile.role === "worker" ? "/worker" : "/employer", { replace: true });
     } catch (err) {
       const msgs = {
         "auth/email-already-in-use": "An account with this email already exists.",
-        "auth/invalid-email":        "Invalid email address.",
-        "auth/weak-password":        "Password must be at least 6 characters.",
+        "auth/invalid-email": "Invalid email address.",
+        "auth/weak-password": "Password must be at least 6 characters.",
       };
       setError(msgs[err.code] || err.message || "Signup failed. Please try again.");
       setIsLoading(false);
@@ -90,6 +93,7 @@ export default function Signup() {
   };
 
   const currSymbol = CURRENCIES.find(c => c.code === currency)?.symbol || "₦";
+  const initials = ((form.firstName?.[0]||"") + (form.lastName?.[0]||"")).toUpperCase() || "?";
 
   return (
     <div className={styles.page}>
@@ -110,6 +114,26 @@ export default function Signup() {
         {error && <div className={styles.error}>{error}</div>}
 
         <form className={styles.form} onSubmit={handleSubmit}>
+
+          {/* AVATAR UPLOAD */}
+          <div className={styles.avatarSection}>
+            <div className={styles.avatarPreview} onClick={() => fileInputRef.current?.click()}>
+              {avatarPreview
+                ? <img src={avatarPreview} alt="avatar" className={styles.avatarImg} />
+                : <span className={styles.avatarInitials}>{initials}</span>
+              }
+              <div className={styles.avatarOverlay}>📷</div>
+            </div>
+            <div className={styles.avatarInfo}>
+              <p className={styles.avatarLabel}>Profile photo</p>
+              <p className={styles.avatarHint}>Optional · Max 2MB</p>
+              <button type="button" className={styles.avatarBtn} onClick={() => fileInputRef.current?.click()}>
+                {avatarPreview ? "Change photo" : "Upload photo"}
+              </button>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImageChange} />
+          </div>
+
           <div className={styles.row}>
             <div><label>First name *</label><input placeholder="Oladimeji" value={form.firstName} onChange={set("firstName")} /></div>
             <div><label>Last name</label><input placeholder="Ojo" value={form.lastName} onChange={set("lastName")} /></div>
@@ -121,9 +145,7 @@ export default function Signup() {
             <label>Password *</label>
             <div className={styles.passwordField}>
               <input type={showPass?"text":"password"} placeholder="Min. 6 characters" value={form.password} onChange={set("password")} />
-              <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>
-                {showPass ? "🙈" : "👁️"}
-              </button>
+              <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>{showPass?"🙈":"👁️"}</button>
             </div>
           </div>
 
@@ -166,7 +188,6 @@ export default function Signup() {
           <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create Account →"}
           </Button>
-
           <p className={styles.switch}>Already have an account? <Link to="/login" className={styles.switchLink}>Log in</Link></p>
         </form>
       </div>

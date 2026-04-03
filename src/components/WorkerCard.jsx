@@ -14,7 +14,12 @@ export default function WorkerCard({ worker, distance }) {
     <>
       <div className={styles.card}>
         <div className={styles.top}>
-          <div className={styles.avatar}>{worker.initials}</div>
+          <div className={styles.avatar}>
+            {worker.avatarBase64
+              ? <img src={worker.avatarBase64} alt={worker.fullName} className={styles.avatarImg} />
+              : <span>{worker.initials}</span>
+            }
+          </div>
           <div style={{flex:1}}>
             <div className={styles.name}>{worker.fullName}</div>
             <div className={styles.location}>
