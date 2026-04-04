@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import ProposalModal from "./ProposalModal";
+import Avatar from "./Avatar";
 import styles from "./WorkerCard.module.css";
 
 const CURRENCY_SYMBOLS = { NGN:"₦", USD:"$", GBP:"£" };
@@ -14,13 +15,8 @@ export default function WorkerCard({ worker, distance }) {
     <>
       <div className={styles.card}>
         <div className={styles.top}>
-          <div className={styles.avatar}>
-            {worker.avatarBase64
-              ? <img src={worker.avatarBase64} alt={worker.fullName} className={styles.avatarImg} />
-              : <span>{worker.initials}</span>
-            }
-          </div>
-          <div style={{flex:1}}>
+          <Avatar avatarBase64={worker.avatarBase64} initials={worker.initials} size={44} />
+          <div style={{flex:1, minWidth:0}}>
             <div className={styles.name}>{worker.fullName}</div>
             <div className={styles.location}>
               📍 {worker.location}

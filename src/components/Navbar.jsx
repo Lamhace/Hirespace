@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Avatar from "./Avatar";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
-  const { profile, logout } = useAuth();
-  const navigate = useNavigate();
+  const { profile, logout, totalUnread } = useAuth();
+  const navigate   = useNavigate();
   const isEmployer = profile?.role === "employer";
 
   const handleLogout = async () => { await logout(); navigate("/"); };
@@ -13,15 +14,22 @@ export default function Navbar() {
     <nav className={styles.nav}>
       <div className={styles.logo} onClick={() => navigate("/")}>HireSpace</div>
       <div className={styles.right}>
-        <div
-          className={styles.avatar}
-          style={isEmployer ? { borderColor:"var(--border-p)" } : {}}
-        >
-          {profile?.avatarBase64
-            ? <img src={profile.avatarBase64} alt="avatar" className={styles.avatarImg} />
-            : <span style={{ color: isEmployer ? "var(--purple)" : "var(--cyan)" }}>{profile?.initials || "U"}</span>
-          }
-        </div>
+
+        {/* Notification bell */}
+        {totalUnread > 0 && (
+          <div className={styles.bell} title={`${totalUnread} unread message${totalUnread > 1 ? "s" : ""}`}>
+            <span className={styles.bellIcon}>🔔</span>
+            <span className={styles.bellCount}>{totalUnread > 9 ? "9+" : totalUnread}</span>
+          </div>
+        )}
+
+        <Avatar
+          avatarBase64={profile?.avatarBase64}
+          initials={profile?.initials || "U"}
+          size={36}
+          isEmployer={isEmployer}
+        />
+
         <div>
           <div className={styles.name}>{profile?.fullName || "User"}</div>
           <div className={styles.badge} style={isEmployer ? { color:"var(--purple)", background:"var(--purple-dim)", borderColor:"var(--border-p)" } : {}}>

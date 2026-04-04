@@ -398,3 +398,52 @@
   .rateBadge { margin-top: 0.5rem; }
   .tabs { width: 100%; }
 }
+
+/* Location section */
+.locationSection { padding-top: 0.25rem; }
+.locationSection label {
+  font-family: var(--display); font-size: 0.72rem; font-weight: 700;
+  color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em;
+  display: block; margin-bottom: 0.4rem;
+}
+.locDesc { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.85rem; line-height: 1.6; }
+
+.locEnabled { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.locOnTag {
+  font-size: 0.8rem; color: #4ade80;
+  background: rgba(74,222,128,0.07); border: 1px solid rgba(74,222,128,0.2);
+  border-radius: var(--radius-sm); padding: 0.5rem 0.85rem; flex: 1;
+}
+.locOffBtn {
+  font-family: var(--display); font-size: 0.72rem; font-weight: 500;
+  color: var(--muted); background: none; border: 1px solid var(--border);
+  border-radius: var(--radius-pill); padding: 0.4rem 0.85rem; cursor: pointer; transition: all 0.2s;
+}
+.locOffBtn:hover { color: #f87171; border-color: rgba(248,113,113,0.3); }
+
+.locDisabled { display: flex; flex-direction: column; gap: 0.5rem; }
+.locError { font-size: 0.75rem; color: #fca5a5; }
+.locEnableBtn {
+  font-family: var(--display); font-size: 0.8rem; font-weight: 600;
+  color: var(--cyan); background: var(--cyan-dim); border: 1px solid var(--border-c);
+  border-radius: var(--radius-pill); padding: 0.6rem 1.25rem; cursor: pointer; transition: all 0.2s;
+  align-self: flex-start;
+}
+.locEnableBtn:hover:not(:disabled) { background: var(--cyan-mid); }
+.locEnableBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Unread dot on chat button */
+.unreadDot {
+  background: #ef4444; color: #fff;
+  font-size: 0.6rem; font-weight: 700;
+  min-width: 18px; height: 18px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 3px; margin-left: 0.4rem;
+}
+
+/* Tab active class fix */
+.tabs .activeTab {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid var(--border-c);
+}
