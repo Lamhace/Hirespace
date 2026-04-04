@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import styles from "./ChatBox.module.css";
 
 export default function ChatBox({ proposal, onClose }) {
-  const { profile, sendMessage, subscribeToMessages, depositEscrow, getEscrow, markChatRead, closeChatNotify } = useAuth();
+  const { profile, sendMessage, subscribeToMessages, depositEscrow, getEscrow, markChatRead } = useAuth();
   const [messages,   setMessages]   = useState([]);
   const [input,      setInput]      = useState("");
   const [showEscrow, setShowEscrow] = useState(false);
@@ -13,13 +13,12 @@ export default function ChatBox({ proposal, onClose }) {
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
-  // Mark chat as read when opened and cleanup on close
+  // Mark chat as read when opened
   useEffect(() => {
     if (proposal?.id) markChatRead(proposal.id);
-    return () => closeChatNotify();
   }, [proposal.id]);
 
-  // Mark as read again whenever new messages arrive while chat is open
+  // Also mark as read whenever new messages arrive while chat is open
   useEffect(() => {
     if (proposal?.id && messages.length > 0) markChatRead(proposal.id);
   }, [messages.length]);

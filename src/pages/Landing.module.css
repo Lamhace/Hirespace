@@ -226,3 +226,15 @@
   .statsBar { gap: 1.5rem; }
   .roleCards { grid-template-columns: 1fr; }
 }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 640px) {
+  .inner { padding: 0 1rem 3rem; }
+  .nav   { padding: 1rem 0; margin-bottom: 2.5rem; }
+  .title { font-size: clamp(2rem,8vw,3rem); }
+  .sub   { font-size: 0.92rem; }
+  .cta   { flex-direction: column; }
+  .statsBar    { gap: 1.25rem; flex-wrap: wrap; }
+  .roleCards   { grid-template-columns: 1fr; }
+  .skillCloud  { display: none; }
+}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged,
@@ -37,9 +37,9 @@ export function AuthProvider({ children }) {
   const [workers,      setWorkers]      = useState([]);
   const [proposals,    setProposals]    = useState([]);
   const [loading,      setLoading]      = useState(true);
-  // unreadCounts: { [proposalId]: number }
-  const [unreadCounts, setUnreadCounts] = useState({});
-  const openChatRef = useRef(null); // tracks which chat panel is currently open
+  // hasNewMessage: { [proposalId]: boolean }
+  // True when the OTHER user sent at least one message since this user last opened the chat
+  const [hasNewMessage, setHasNewMessage] = useState({});
 
   // ── Auth listener ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -50,7 +50,9 @@ export function AuthProvider({ children }) {
           const snap = await getDoc(doc(db, "users", fu.uid));
           setProfile(snap.exists() ? { uid: fu.uid, ...snap.data() } : null);
         } catch (e) { console.error(e); setProfile(null); }
-      } else { setUser(null); setProfile(null); }
+      } else {
+        setUser(null); setProfile(null); setHasNewMessage({});
+      }
       setLoading(false);
     });
     return () => unsub();
@@ -78,9 +80,10 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, [user?.uid, profile?.role]);
 
-  // ── Global message listener for unread notifications ─────────────────────
-  // Listens to ALL accepted proposal chats for the current user
-  // and tracks unread counts in real time
+  // ── Global notification listener ─────────────────────────────────────────
+  // For each accepted proposal, listen to its chat.
+  // If the LAST message was sent by the OTHER user → show notification (1).
+  // The notification clears only when the current user opens that chat.
   useEffect(() => {
     if (!user?.uid || !proposals.length) return;
 
@@ -89,18 +92,26 @@ export function AuthProvider({ children }) {
 
     const unsubscribers = accepted.map((proposal) => {
       const chatPath = dbRef(rtdb, `chats/${proposal.id}/messages`);
-      const lastReadKey = `hs_lastread_${user.uid}_${proposal.id}`;
-      const lastRead = parseInt(localStorage.getItem(lastReadKey) || "0", 10);
 
       dbOnValue(chatPath, (snap) => {
         const data = snap.val();
         if (!data) return;
+
         const msgs = Object.values(data);
-        // Count messages from the OTHER person that arrived after last read
-        const unread = msgs.filter(
-          (m) => m.senderId !== user.uid && (m.timestamp || 0) > lastRead
-        ).length;
-        setUnreadCounts((prev) => ({ ...prev, [proposal.id]: unread }));
+        // Find the most recent message sent by the OTHER user
+        const otherMsgs = msgs.filter((m) => m.senderId !== user.uid);
+        if (!otherMsgs.length) return;
+
+        // Get the timestamp of the last message from the other user
+        const latestOtherTs = Math.max(...otherMsgs.map((m) => m.timestamp || 0));
+
+        // Compare with when this user last read this chat
+        const lastReadKey = `hs_lastread_${user.uid}_${proposal.id}`;
+        const lastRead    = parseInt(localStorage.getItem(lastReadKey) || "0", 10);
+
+        // Show notification if there's a newer message from the other user
+        const hasNew = latestOtherTs > lastRead;
+        setHasNewMessage((prev) => ({ ...prev, [proposal.id]: hasNew }));
       });
 
       return () => dbOff(chatPath);
@@ -109,19 +120,15 @@ export function AuthProvider({ children }) {
     return () => unsubscribers.forEach((u) => u());
   }, [user?.uid, proposals]);
 
-  // Total unread across all chats
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+  // Total proposals with new messages (1 per proposal, not per message)
+  const totalUnread = Object.values(hasNewMessage).filter(Boolean).length;
 
-  // Call when user opens a specific chat
+  // Call when user opens a specific chat — clears the notification for that chat
   const markChatRead = (proposalId) => {
     if (!user?.uid) return;
-    const key = `hs_lastread_${user.uid}_${proposalId}`;
-    localStorage.setItem(key, Date.now().toString());
-    setUnreadCounts((prev) => ({ ...prev, [proposalId]: 0 }));
-    openChatRef.current = proposalId;
+    localStorage.setItem(`hs_lastread_${user.uid}_${proposalId}`, Date.now().toString());
+    setHasNewMessage((prev) => ({ ...prev, [proposalId]: false }));
   };
-
-  const closeChatNotify = () => { openChatRef.current = null; };
 
   // ── Auto-archive expired deals ────────────────────────────────────────────
   useEffect(() => {
@@ -129,19 +136,19 @@ export function AuthProvider({ children }) {
       try {
         const q = query(collection(db, "proposals"), where("status", "==", "accepted"));
         const snap = await getDocs(q);
-        const now = Date.now();
+        const now  = Date.now();
         for (const d of snap.docs) {
           const p = d.data();
           if (!p.timeline || !p.acceptedAt) continue;
-          const duration = TIMELINE_MS[p.timeline];
+          const duration  = TIMELINE_MS[p.timeline];
           if (!duration) continue;
           const acceptedMs = p.acceptedAt?.seconds ? p.acceptedAt.seconds * 1000 : new Date(p.acceptedAt).getTime();
-          const endsAt = acceptedMs + duration;
+          const endsAt     = acceptedMs + duration;
           if (now >= endsAt) {
-            await updateDoc(doc(db, "proposals", d.id), { status: "archived", archivedAt: new Date().toISOString(), archiveReason: "Deal timeframe completed" });
+            await updateDoc(doc(db, "proposals", d.id), { status:"archived", archivedAt:new Date().toISOString(), archiveReason:"Deal timeframe completed" });
           } else if (now >= endsAt - 24*60*60*1000 && !p.adminNotified) {
             await addDoc(collection(db, "admin_notifications"), { type:"deal_expiring", proposalId:d.id, workerName:p.workerName, employerName:p.employerName, timeline:p.timeline, endsAt:new Date(endsAt).toISOString(), createdAt:serverTimestamp(), read:false });
-            await updateDoc(doc(db, "proposals", d.id), { adminNotified: true });
+            await updateDoc(doc(db, "proposals", d.id), { adminNotified:true });
           }
         }
       } catch (e) { console.error("Deal check error:", e); }
@@ -158,7 +165,7 @@ export function AuthProvider({ children }) {
     const uid  = cred.user.uid;
     const initials = ((rest.firstName?.[0]||"") + (rest.lastName?.[0]||"")).toUpperCase() || "U";
     const fullName = [rest.firstName, rest.lastName].filter(Boolean).join(" ");
-    const userProfile = { ...rest, uid, email, fullName, initials, createdAt: new Date().toISOString() };
+    const userProfile = { ...rest, uid, email, fullName, initials, createdAt:new Date().toISOString() };
     await setDoc(doc(db, "users", uid), userProfile);
     setUser(cred.user); setProfile(userProfile);
     return userProfile;
@@ -170,7 +177,7 @@ export function AuthProvider({ children }) {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const snap = await getDoc(doc(db, "users", cred.user.uid));
       if (!snap.exists()) { await signOut(auth); return { success:false, error:"Account not found." }; }
-      const profileData = { uid: cred.user.uid, ...snap.data() };
+      const profileData = { uid:cred.user.uid, ...snap.data() };
       if (profileData.role !== role) { await signOut(auth); return { success:false, error:`This account is registered as a ${profileData.role}. Please select the correct role.` }; }
       setUser(cred.user); setProfile(profileData);
       return { success:true, role:profileData.role };
@@ -180,7 +187,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = async () => { await signOut(auth); setUser(null); setProfile(null); setUnreadCounts({}); };
+  const logout = async () => { await signOut(auth); setUser(null); setProfile(null); setHasNewMessage({}); };
 
   // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = async (updates) => {
@@ -212,7 +219,9 @@ export function AuthProvider({ children }) {
 
   // ── Chat ──────────────────────────────────────────────────────────────────
   const sendMessage = async (proposalId, message) => {
-    if (isFlagged(message.text)) return { blocked:true, reason:"Message contains contact info (phone numbers or social media handles) which is not allowed on HireSpace." };
+    if (isFlagged(message.text)) {
+      return { blocked:true, reason:"Message contains contact info (phone numbers or social media handles) which is not allowed on HireSpace." };
+    }
     await dbPush(dbRef(rtdb, `chats/${proposalId}/messages`), { ...message, timestamp:Date.now() });
     return { blocked:false };
   };
@@ -235,7 +244,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, profile, workers, proposals, loading,
-      totalUnread, unreadCounts, markChatRead, closeChatNotify,
+      totalUnread, hasNewMessage, markChatRead,
       signup, login, logout, updateProfile,
       sendProposal, respondToProposal, getWorkerProposals, getEmployerProposals,
       depositEscrow, getEscrow,

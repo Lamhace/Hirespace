@@ -269,3 +269,15 @@
 @media (max-width: 480px) {
   .panel { max-width: 100%; }
 }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 640px) {
+  .panel { max-width: 100%; border-left: none; }
+  .header { padding: 1rem; }
+  .messages { padding: 1rem 0.85rem; }
+  .inputArea { padding: 0.75rem 0.85rem; }
+  .disclaimer { padding: 0.4rem 0.85rem 0.65rem; }
+  .groupBubbles { max-width: 85%; }
+  .escrowModal { border-radius: 16px; }
+  .escrowForm, .escrowInfo { padding: 1rem 1.25rem; }
+}

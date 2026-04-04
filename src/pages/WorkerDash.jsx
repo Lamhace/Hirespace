@@ -6,7 +6,7 @@ import Avatar from "../components/Avatar";
 import styles from "./WorkerDash.module.css";
 
 export default function WorkerDash() {
-  const { user, profile, getWorkerProposals, respondToProposal, updateProfile, unreadCounts } = useAuth();
+  const { user, profile, getWorkerProposals, respondToProposal, updateProfile, hasNewMessage } = useAuth();
   const [tab,        setTab]        = useState("profile");
   const [activeChat, setActiveChat] = useState(null);
   const [locLoading, setLocLoading] = useState(false);
@@ -18,9 +18,9 @@ export default function WorkerDash() {
   const pending   = proposals.filter((p) => p.status === "pending").length;
 
   // Total unread across all accepted proposals
-  const totalUnreadInRequests = proposals
+  const totalNewMessages = proposals
     .filter((p) => p.status === "accepted")
-    .reduce((sum, p) => sum + (unreadCounts[p.id] || 0), 0);
+    .reduce((sum, p) => sum + (hasNewMessage[p.id] ? 1 : 0), 0);
 
   const enableLocation = () => {
     setLocLoading(true);
@@ -55,8 +55,8 @@ export default function WorkerDash() {
           <button className={`${styles.tab} ${tab==="profile"?styles.activeTab:""}`}  onClick={() => setTab("profile")}>Profile</button>
           <button className={`${styles.tab} ${tab==="requests"?styles.activeTab:""}`} onClick={() => setTab("requests")}>
             Requests
-            {(pending + totalUnreadInRequests) > 0 && (
-              <span className={styles.badge}>{pending + totalUnreadInRequests}</span>
+            {(pending + totalNewMessages) > 0 && (
+              <span className={styles.badge}>{pending + totalNewMessages}</span>
             )}
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function WorkerDash() {
               </div>
             ) : (
               proposals.map((p) => {
-                const unread = unreadCounts[p.id] || 0;
+                const hasNew = hasNewMessage[p.id] || false;
                 return (
                   <div key={p.id} className={`${styles.proposalCard} ${styles[p.status]}`}>
                     <div className={styles.proposalTop}>
@@ -189,7 +189,7 @@ export default function WorkerDash() {
                       <div className={styles.acceptedSection}>
                         <button className={styles.chatBtn} onClick={() => setActiveChat(p)}>
                           💬 Open Chat
-                          {unread > 0 && <span className={styles.unreadDot}>{unread}</span>}
+                          {hasNew && <span className={styles.unreadDot}>1</span>}
                         </button>
                       </div>
                     )}

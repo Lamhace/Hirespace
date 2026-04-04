@@ -17,7 +17,7 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 }
 
 export default function EmployerDash() {
-  const { profile, workers, getEmployerProposals, unreadCounts } = useAuth();
+  const { profile, workers, getEmployerProposals, hasNewMessage } = useAuth();
   const [tab,        setTab]        = useState("browse");
   const [search,     setSearch]     = useState("");
   const [filterJob,  setFilterJob]  = useState("");
@@ -240,8 +240,8 @@ export default function EmployerDash() {
 
                   <button className={styles.chatBtn} onClick={() => setActiveChat(p)}>
                     💬 Open Chat & Escrow →
-                    {(unreadCounts[p.id] || 0) > 0 && (
-                      <span className={styles.unreadDot}>{unreadCounts[p.id]}</span>
+                    {hasNewMessage[p.id] && (
+                      <span className={styles.unreadDot}>1</span>
                     )}
                   </button>
                 </div>
