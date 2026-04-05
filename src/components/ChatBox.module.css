@@ -4,14 +4,26 @@
   z-index: 300;
   display: flex; align-items: center; justify-content: flex-end;
   animation: fadeIn 0.2s ease;
+  /* Block browser swipe-back on iOS/Android */
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 .panel {
-  width: 100%; max-width: 440px; height: 100vh;
+  width: 100%; max-width: 440px;
+  /* Use dvh (dynamic viewport height) which accounts for mobile browser chrome */
+  height: 100dvh;
+  /* Fallback for browsers that don't support dvh */
+  height: 100vh;
   background: var(--bg2);
   border-left: 1px solid var(--border);
   display: flex; flex-direction: column;
   animation: slideRight 0.25s ease;
+  /* Allow the panel itself to scroll internally, not the page */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  /* Prevent content from being pushed up by keyboard on iOS */
+  position: relative;
 }
 
 @keyframes slideRight {
@@ -272,12 +284,48 @@
 
 /* ── MOBILE RESPONSIVE ── */
 @media (max-width: 640px) {
-  .panel { max-width: 100%; border-left: none; }
-  .header { padding: 1rem; }
-  .messages { padding: 1rem 0.85rem; }
-  .inputArea { padding: 0.75rem 0.85rem; }
-  .disclaimer { padding: 0.4rem 0.85rem 0.65rem; }
-  .groupBubbles { max-width: 85%; }
-  .escrowModal { border-radius: 16px; }
-  .escrowForm, .escrowInfo { padding: 1rem 1.25rem; }
+  .panel {
+    max-width: 100%;
+    border-left: none;
+    width: 100vw;
+    height: 100dvh;
+    height: -webkit-fill-available;
+  }
+
+  .header {
+    padding: 0.85rem 1rem;
+    padding-top: max(0.85rem, env(safe-area-inset-top));
+    flex-shrink: 0;
+  }
+
+  /* Make close button a large tap target so it is never cut off */
+  .closeBtn {
+    font-size: 1.1rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+
+  .escrowBtn    { font-size: 0.65rem; padding: 0.3rem 0.65rem; }
+  .headerName   { font-size: 0.88rem; }
+  .messages     { padding: 0.85rem; }
+  .groupBubbles { max-width: 88%; }
+  .msgText      { font-size: 0.9rem; }
+
+  .inputArea {
+    padding: 0.65rem 0.85rem;
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom));
+  }
+  .input      { font-size: 16px; }
+  .disclaimer { padding: 0.35rem 0.85rem 0.5rem; font-size: 0.6rem; }
+
+  .escrowOverlay { padding: 0; align-items: flex-end; }
+  .escrowModal   { border-radius: 20px 20px 0 0; max-width: 100%; }
+  .escrowForm,
+  .escrowInfo    { padding: 1rem 1.25rem; }
+  .escrowHeader  { padding: 1rem 1.25rem; }
 }

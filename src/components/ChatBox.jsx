@@ -13,6 +13,22 @@ export default function ChatBox({ proposal, onClose }) {
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
+  // Prevent browser swipe-back gesture from exiting the site while chat is open
+  useEffect(() => {
+    // Push a history state so the back gesture hits this entry first
+    window.history.pushState({ chatOpen: true }, "");
+
+    const handlePopState = (e) => {
+      // User swiped back — close chat instead of navigating away
+      onClose();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   // Mark chat as read when opened
   useEffect(() => {
     if (proposal?.id) markChatRead(proposal.id);
