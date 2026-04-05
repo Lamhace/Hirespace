@@ -7,10 +7,11 @@ import styles from "./WorkerDash.module.css";
 
 export default function WorkerDash() {
   const { user, profile, getWorkerProposals, respondToProposal, updateProfile, hasNewMessage } = useAuth();
-  const [tab,        setTab]        = useState("profile");
-  const [activeChat, setActiveChat] = useState(null);
-  const [locLoading, setLocLoading] = useState(false);
-  const [locError,   setLocError]   = useState("");
+  const [tab,           setTab]           = useState("profile");
+  const [activeChat,    setActiveChat]    = useState(null);
+  const [locLoading,    setLocLoading]    = useState(false);
+  const [locError,      setLocError]      = useState("");
+  const [availLoading,  setAvailLoading]  = useState(false);
 
   if (!profile) return null;
 
@@ -37,6 +38,12 @@ export default function WorkerDash() {
 
   const disableLocation = async () => {
     await updateProfile({ lat: null, lng: null, locationEnabled: false });
+  };
+
+  const toggleAvailability = async () => {
+    setAvailLoading(true);
+    await updateProfile({ available: !profile.available });
+    setAvailLoading(false);
   };
 
   const CURRENCY_SYMBOLS = { NGN:"₦", USD:"$", GBP:"£" };
@@ -109,7 +116,46 @@ export default function WorkerDash() {
 
               <div className={styles.divider} />
 
-              {/* LOCATION SECTION FOR WORKER */}
+              {/* AVAILABILITY TOGGLE */}
+              <div className={styles.availSection}>
+                <div className={styles.availHeader}>
+                  <div>
+                    <label>Availability</label>
+                    <p className={styles.availDesc}>Let employers know if you're open for new work right now.</p>
+                  </div>
+                  <button
+                    className={`${styles.availToggle} ${profile.available ? styles.availOn : styles.availOff}`}
+                    onClick={toggleAvailability}
+                    disabled={availLoading}
+                  >
+                    <span className={styles.availDot} />
+                    {availLoading ? "Updating..." : profile.available ? "Available" : "Unavailable"}
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.divider} />
+
+              {/* RATINGS DISPLAY */}
+              {profile.reviewCount > 0 && (
+                <>
+                  <div className={styles.ratingsSection}>
+                    <label>Your rating</label>
+                    <div className={styles.ratingRow}>
+                      <div className={styles.ratingBig}>{profile.avgRating?.toFixed(1)}</div>
+                      <div>
+                        <div className={styles.ratingStars}>
+                          {[1,2,3,4,5].map((s) => (
+                            <span key={s} style={{ color: s <= Math.round(profile.avgRating) ? "#fbbf24" : "var(--border)" }}>★</span>
+                          ))}
+                        </div>
+                        <p className={styles.ratingCount}>{profile.reviewCount} review{profile.reviewCount !== 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.divider} />
+                </>
+              )}
               <div className={styles.locationSection}>
                 <label>📍 Location visibility</label>
                 <p className={styles.locDesc}>Enable location so nearby employers can find you more easily.</p>

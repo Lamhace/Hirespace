@@ -14,12 +14,12 @@ import { auth, db, rtdb } from "../firebase";
 
 const AuthContext = createContext(null);
 
+// "Ongoing" removed — use "Mark as complete" button instead
 const TIMELINE_MS = {
   "Less than 1 week": 6  * 24 * 60 * 60 * 1000,
   "1–2 weeks":        13 * 24 * 60 * 60 * 1000,
   "1 month":          30 * 24 * 60 * 60 * 1000,
   "2–3 months":       75 * 24 * 60 * 60 * 1000,
-  "Ongoing": null,
 };
 
 const FLAG_PATTERNS = [
@@ -28,17 +28,25 @@ const FLAG_PATTERNS = [
   /(wa\.me|whatsapp|instagram|telegram|snapchat|twitter|tiktok|facebook)/i,
   /\b(dm me|text me|call me|my number|my ig|my whatsapp)\b/i,
 ];
-
 function isFlagged(text) { return FLAG_PATTERNS.some((p) => p.test(text)); }
 
+// Helper: get lastRead timestamp from localStorage
+function getLastRead(uid, proposalId) {
+  return parseInt(localStorage.getItem(`hs_lastread_${uid}_${proposalId}`) || "0", 10);
+}
+
+// Helper: set lastRead timestamp in localStorage
+function setLastRead(uid, proposalId, ts) {
+  localStorage.setItem(`hs_lastread_${uid}_${proposalId}`, ts.toString());
+}
+
 export function AuthProvider({ children }) {
-  const [user,         setUser]         = useState(null);
-  const [profile,      setProfile]      = useState(null);
-  const [workers,      setWorkers]      = useState([]);
-  const [proposals,    setProposals]    = useState([]);
-  const [loading,      setLoading]      = useState(true);
+  const [user,          setUser]          = useState(null);
+  const [profile,       setProfile]       = useState(null);
+  const [workers,       setWorkers]       = useState([]);
+  const [proposals,     setProposals]     = useState([]);
+  const [loading,       setLoading]       = useState(true);
   // hasNewMessage: { [proposalId]: boolean }
-  // True when the OTHER user sent at least one message since this user last opened the chat
   const [hasNewMessage, setHasNewMessage] = useState({});
 
   // ── Auth listener ─────────────────────────────────────────────────────────
@@ -80,10 +88,12 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, [user?.uid, profile?.role]);
 
-  // ── Global notification listener ─────────────────────────────────────────
-  // For each accepted proposal, listen to its chat.
-  // If the LAST message was sent by the OTHER user → show notification (1).
-  // The notification clears only when the current user opens that chat.
+  // ── Global notification listener ──────────────────────────────────────────
+  // Key rule: a notification shows if:
+  //   1. The OTHER user sent at least one message in this chat
+  //   2. The timestamp of the OTHER user's latest message is AFTER
+  //      the current user's lastRead timestamp stored in localStorage
+  // This means: after re-login, if lastRead >= latest other msg, NO notification shown.
   useEffect(() => {
     if (!user?.uid || !proposals.length) return;
 
@@ -97,21 +107,21 @@ export function AuthProvider({ children }) {
         const data = snap.val();
         if (!data) return;
 
-        const msgs = Object.values(data);
-        // Find the most recent message sent by the OTHER user
-        const otherMsgs = msgs.filter((m) => m.senderId !== user.uid);
+        const msgs          = Object.values(data);
+        const otherMsgs     = msgs.filter((m) => m.senderId !== user.uid);
         if (!otherMsgs.length) return;
 
-        // Get the timestamp of the last message from the other user
+        // Latest message timestamp from the OTHER person
         const latestOtherTs = Math.max(...otherMsgs.map((m) => m.timestamp || 0));
 
-        // Compare with when this user last read this chat
-        const lastReadKey = `hs_lastread_${user.uid}_${proposal.id}`;
-        const lastRead    = parseInt(localStorage.getItem(lastReadKey) || "0", 10);
+        // When did THIS user last read this chat (persisted across sessions)
+        const lastRead      = getLastRead(user.uid, proposal.id);
 
-        // Show notification if there's a newer message from the other user
-        const hasNew = latestOtherTs > lastRead;
-        setHasNewMessage((prev) => ({ ...prev, [proposal.id]: hasNew }));
+        // Only show notification if OTHER person's latest msg is newer than last read
+        setHasNewMessage((prev) => ({
+          ...prev,
+          [proposal.id]: latestOtherTs > lastRead,
+        }));
       });
 
       return () => dbOff(chatPath);
@@ -120,13 +130,14 @@ export function AuthProvider({ children }) {
     return () => unsubscribers.forEach((u) => u());
   }, [user?.uid, proposals]);
 
-  // Total proposals with new messages (1 per proposal, not per message)
+  // Total chats with unseen messages (capped at 1 per chat regardless of message count)
   const totalUnread = Object.values(hasNewMessage).filter(Boolean).length;
 
-  // Call when user opens a specific chat — clears the notification for that chat
+  // Call when user opens a chat — persists lastRead to localStorage
   const markChatRead = (proposalId) => {
     if (!user?.uid) return;
-    localStorage.setItem(`hs_lastread_${user.uid}_${proposalId}`, Date.now().toString());
+    const now = Date.now();
+    setLastRead(user.uid, proposalId, now);
     setHasNewMessage((prev) => ({ ...prev, [proposalId]: false }));
   };
 
@@ -134,21 +145,29 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkDeals = async () => {
       try {
-        const q = query(collection(db, "proposals"), where("status", "==", "accepted"));
+        const q    = query(collection(db, "proposals"), where("status", "==", "accepted"));
         const snap = await getDocs(q);
         const now  = Date.now();
         for (const d of snap.docs) {
-          const p = d.data();
+          const p        = d.data();
           if (!p.timeline || !p.acceptedAt) continue;
-          const duration  = TIMELINE_MS[p.timeline];
+          const duration = TIMELINE_MS[p.timeline]; // undefined for removed "Ongoing"
           if (!duration) continue;
-          const acceptedMs = p.acceptedAt?.seconds ? p.acceptedAt.seconds * 1000 : new Date(p.acceptedAt).getTime();
-          const endsAt     = acceptedMs + duration;
+          const acceptedMs = p.acceptedAt?.seconds
+            ? p.acceptedAt.seconds * 1000
+            : new Date(p.acceptedAt).getTime();
+          const endsAt = acceptedMs + duration;
           if (now >= endsAt) {
-            await updateDoc(doc(db, "proposals", d.id), { status:"archived", archivedAt:new Date().toISOString(), archiveReason:"Deal timeframe completed" });
+            await updateDoc(doc(db, "proposals", d.id), {
+              status: "archived", archivedAt: new Date().toISOString(), archiveReason: "Deal timeframe completed",
+            });
           } else if (now >= endsAt - 24*60*60*1000 && !p.adminNotified) {
-            await addDoc(collection(db, "admin_notifications"), { type:"deal_expiring", proposalId:d.id, workerName:p.workerName, employerName:p.employerName, timeline:p.timeline, endsAt:new Date(endsAt).toISOString(), createdAt:serverTimestamp(), read:false });
-            await updateDoc(doc(db, "proposals", d.id), { adminNotified:true });
+            await addDoc(collection(db, "admin_notifications"), {
+              type:"deal_expiring", proposalId:d.id, workerName:p.workerName,
+              employerName:p.employerName, timeline:p.timeline,
+              endsAt:new Date(endsAt).toISOString(), createdAt:serverTimestamp(), read:false,
+            });
+            await updateDoc(doc(db, "proposals", d.id), { adminNotified: true });
           }
         }
       } catch (e) { console.error("Deal check error:", e); }
@@ -165,7 +184,7 @@ export function AuthProvider({ children }) {
     const uid  = cred.user.uid;
     const initials = ((rest.firstName?.[0]||"") + (rest.lastName?.[0]||"")).toUpperCase() || "U";
     const fullName = [rest.firstName, rest.lastName].filter(Boolean).join(" ");
-    const userProfile = { ...rest, uid, email, fullName, initials, createdAt:new Date().toISOString() };
+    const userProfile = { ...rest, uid, email, fullName, initials, createdAt: new Date().toISOString() };
     await setDoc(doc(db, "users", uid), userProfile);
     setUser(cred.user); setProfile(userProfile);
     return userProfile;
@@ -176,18 +195,41 @@ export function AuthProvider({ children }) {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (!snap.exists()) { await signOut(auth); return { success:false, error:"Account not found." }; }
-      const profileData = { uid:cred.user.uid, ...snap.data() };
-      if (profileData.role !== role) { await signOut(auth); return { success:false, error:`This account is registered as a ${profileData.role}. Please select the correct role.` }; }
+      if (!snap.exists()) {
+        await signOut(auth);
+        return { success: false, error: "Account not found. Please sign up first." };
+      }
+      const profileData = { uid: cred.user.uid, ...snap.data() };
+
+      // Wrong role — give a clear, specific error message
+      if (profileData.role !== role) {
+        await signOut(auth);
+        const actualRole   = profileData.role === "employer" ? "Employer" : "Worker";
+        const selectedRole = role === "employer" ? "Employer" : "Worker";
+        return {
+          success: false,
+          error: `This email is registered as an ${actualRole} account. Please select "${actualRole}" above to log in, or sign up for a new ${selectedRole} account.`,
+        };
+      }
+
       setUser(cred.user); setProfile(profileData);
-      return { success:true, role:profileData.role };
+      return { success: true, role: profileData.role };
     } catch (err) {
-      const msgs = { "auth/user-not-found":"No account found with this email.", "auth/wrong-password":"Incorrect password.", "auth/invalid-email":"Invalid email address.", "auth/invalid-credential":"Incorrect email or password.", "auth/too-many-requests":"Too many attempts. Please try again later." };
-      return { success:false, error:msgs[err.code]||"Login failed. Please try again." };
+      const msgs = {
+        "auth/user-not-found":     "No account found with this email.",
+        "auth/wrong-password":     "Incorrect password. Please try again.",
+        "auth/invalid-email":      "Invalid email address.",
+        "auth/invalid-credential": "Incorrect email or password.",
+        "auth/too-many-requests":  "Too many attempts. Please wait a moment and try again.",
+      };
+      return { success: false, error: msgs[err.code] || "Login failed. Please try again." };
     }
   };
 
-  const logout = async () => { await signOut(auth); setUser(null); setProfile(null); setHasNewMessage({}); };
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null); setProfile(null); setHasNewMessage({});
+  };
 
   // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = async (updates) => {
@@ -208,6 +250,30 @@ export function AuthProvider({ children }) {
   const getWorkerProposals   = () => proposals.filter((p) => p.workerId   === user?.uid);
   const getEmployerProposals = () => proposals.filter((p) => p.employerId === user?.uid);
 
+  // ── Ratings & Reviews ─────────────────────────────────────────────────────
+  const submitReview = async ({ workerId, proposalId, rating, comment, reviewerName }) => {
+    // Save review to Firestore
+    await addDoc(collection(db, "reviews"), {
+      workerId, proposalId, rating, comment,
+      reviewerName, createdAt: serverTimestamp(),
+    });
+    // Update worker's aggregate rating
+    const reviewsSnap = await getDocs(query(collection(db, "reviews"), where("workerId", "==", workerId)));
+    const reviews     = reviewsSnap.docs.map((d) => d.data());
+    const avgRating   = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+    await updateDoc(doc(db, "users", workerId), {
+      avgRating:   Math.round(avgRating * 10) / 10,
+      reviewCount: reviews.length,
+    });
+    // Mark proposal as reviewed
+    await updateDoc(doc(db, "proposals", proposalId), { reviewed: true });
+  };
+
+  const getWorkerReviews = async (workerId) => {
+    const snap = await getDocs(query(collection(db, "reviews"), where("workerId", "==", workerId)));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  };
+
   // ── Escrow ────────────────────────────────────────────────────────────────
   const depositEscrow = async (escrowData) => {
     await setDoc(doc(db, "escrows", escrowData.proposalId), { ...escrowData, updatedAt:serverTimestamp() }, { merge:true });
@@ -217,13 +283,34 @@ export function AuthProvider({ children }) {
     return snap.exists() ? snap.data() : null;
   };
 
+  // ── Disputes ─────────────────────────────────────────────────────────────
+  const raiseDispute = async ({ proposalId, raisedBy, raisedByName, reason, details }) => {
+    await addDoc(collection(db, "disputes"), {
+      proposalId, raisedBy, raisedByName, reason, details,
+      status: "open", createdAt: serverTimestamp(),
+    });
+    // Notify admin
+    await addDoc(collection(db, "admin_notifications"), {
+      type: "dispute_raised", proposalId, raisedByName, reason,
+      createdAt: serverTimestamp(), read: false,
+    });
+    // Freeze escrow
+    await updateDoc(doc(db, "proposals", proposalId), { disputed: true });
+  };
+
+  const getDispute = async (proposalId) => {
+    const q    = query(collection(db, "disputes"), where("proposalId", "==", proposalId));
+    const snap = await getDocs(q);
+    return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+  };
+
   // ── Chat ──────────────────────────────────────────────────────────────────
   const sendMessage = async (proposalId, message) => {
     if (isFlagged(message.text)) {
-      return { blocked:true, reason:"Message contains contact info (phone numbers or social media handles) which is not allowed on HireSpace." };
+      return { blocked: true, reason: "Message contains contact info (phone numbers or social media handles) which is not allowed on HireSpace." };
     }
-    await dbPush(dbRef(rtdb, `chats/${proposalId}/messages`), { ...message, timestamp:Date.now() });
-    return { blocked:false };
+    await dbPush(dbRef(rtdb, `chats/${proposalId}/messages`), { ...message, timestamp: Date.now() });
+    return { blocked: false };
   };
 
   const subscribeToMessages = (proposalId, callback) => {
@@ -248,6 +335,8 @@ export function AuthProvider({ children }) {
       signup, login, logout, updateProfile,
       sendProposal, respondToProposal, getWorkerProposals, getEmployerProposals,
       depositEscrow, getEscrow,
+      submitReview, getWorkerReviews,
+      raiseDispute, getDispute,
       sendMessage, subscribeToMessages,
     }}>
       {!loading && children}

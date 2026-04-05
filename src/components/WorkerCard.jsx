@@ -15,13 +15,28 @@ export default function WorkerCard({ worker, distance }) {
     <>
       <div className={styles.card}>
         <div className={styles.top}>
-          <Avatar avatarBase64={worker.avatarBase64} initials={worker.initials} size={44} />
+          <div className={styles.avatarWrap}>
+            <Avatar avatarBase64={worker.avatarBase64} initials={worker.initials} size={44} />
+            {/* Availability dot on avatar */}
+            <span className={`${styles.availDot} ${worker.available ? styles.availOn : styles.availOff}`} title={worker.available ? "Available" : "Unavailable"} />
+          </div>
           <div style={{flex:1, minWidth:0}}>
-            <div className={styles.name}>{worker.fullName}</div>
+            <div className={styles.nameRow}>
+              <div className={styles.name}>{worker.fullName}</div>
+              {worker.available && <span className={styles.availBadge}>Available</span>}
+            </div>
             <div className={styles.location}>
               📍 {worker.location}
               {distance && <span className={styles.distance}> · {distance} away</span>}
             </div>
+            {/* Star rating */}
+            {worker.reviewCount > 0 && (
+              <div className={styles.rating}>
+                <span className={styles.star}>★</span>
+                <span className={styles.ratingNum}>{worker.avgRating?.toFixed(1)}</span>
+                <span className={styles.ratingCount}>({worker.reviewCount})</span>
+              </div>
+            )}
           </div>
         </div>
 

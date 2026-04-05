@@ -197,3 +197,63 @@
   .greeting h2 { font-size: 1.25rem; }
   .tabs { flex-wrap: wrap; border-radius: var(--radius); }
 }
+
+/* Deal action row */
+.dealActions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.reviewBtn {
+  font-family: var(--display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reviewBtn:hover { background: rgba(251,191,36,0.15); }
+
+.reviewedTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4ade80;
+  background: rgba(74,222,128,0.07);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.disputeBtn {
+  font-family: var(--display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(248,113,113,0.07);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.disputeBtn:hover { background: rgba(248,113,113,0.15); }
+
+.disputedTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.07);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  display: inline-flex;
+  align-items: center;
+}

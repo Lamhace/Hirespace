@@ -4,6 +4,8 @@ import Navbar from "../components/Navbar";
 import WorkerCard from "../components/WorkerCard";
 import Avatar from "../components/Avatar";
 import ChatBox from "../components/ChatBox";
+import ReviewModal from "../components/ReviewModal";
+import DisputeModal from "../components/DisputeModal";
 import styles from "./EmployerDash.module.css";
 
 const ALL_JOBS = ["Plumber","Electrician","House Cleaner","Interior Decorator","Mechanic","Laundry","Gas Filler","Carpenter","Painter","Welder","Tiler","Mason","Generator Repair","AC Repair","Security Guard","Driver","Gardener","Chef / Cook"];
@@ -18,15 +20,17 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 
 export default function EmployerDash() {
   const { profile, workers, getEmployerProposals, hasNewMessage } = useAuth();
-  const [tab,        setTab]        = useState("browse");
-  const [search,     setSearch]     = useState("");
-  const [filterJob,  setFilterJob]  = useState("");
-  const [activeChat, setActiveChat] = useState(null);
-  const [location,   setLocation]   = useState(null);
-  const [locLoading, setLocLoading] = useState(false);
-  const [locError,   setLocError]   = useState("");
-  const [nearbyOnly, setNearbyOnly] = useState(false);
-  const [nearbyKm,   setNearbyKm]   = useState(10);
+  const [tab,          setTab]          = useState("browse");
+  const [search,       setSearch]       = useState("");
+  const [filterJob,    setFilterJob]    = useState("");
+  const [activeChat,   setActiveChat]   = useState(null);
+  const [reviewProposal,  setReviewProposal]  = useState(null);
+  const [disputeProposal, setDisputeProposal] = useState(null);
+  const [location,     setLocation]     = useState(null);
+  const [locLoading,   setLocLoading]   = useState(false);
+  const [locError,     setLocError]     = useState("");
+  const [nearbyOnly,   setNearbyOnly]   = useState(false);
+  const [nearbyKm,     setNearbyKm]     = useState(10);
 
   if (!profile) return null;
 
@@ -244,6 +248,23 @@ export default function EmployerDash() {
                       <span className={styles.unreadDot}>1</span>
                     )}
                   </button>
+
+                  <div className={styles.dealActions}>
+                    {!p.reviewed ? (
+                      <button className={styles.reviewBtn} onClick={() => setReviewProposal(p)}>
+                        ⭐ Rate Worker
+                      </button>
+                    ) : (
+                      <span className={styles.reviewedTag}>✓ Reviewed</span>
+                    )}
+                    {!p.disputed ? (
+                      <button className={styles.disputeBtn} onClick={() => setDisputeProposal(p)}>
+                        🛡️ Dispute
+                      </button>
+                    ) : (
+                      <span className={styles.disputedTag}>⚠️ Dispute open</span>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -293,7 +314,9 @@ export default function EmployerDash() {
 
       </div>
 
-      {activeChat && <ChatBox proposal={activeChat} onClose={() => setActiveChat(null)} />}
+      {activeChat      && <ChatBox       proposal={activeChat}      onClose={() => setActiveChat(null)} />}
+      {reviewProposal  && <ReviewModal   proposal={reviewProposal}  onClose={() => setReviewProposal(null)}  onSubmitted={() => setReviewProposal(null)} />}
+      {disputeProposal && <DisputeModal  proposal={disputeProposal} onClose={() => setDisputeProposal(null)} />}
     </div>
   );
 }

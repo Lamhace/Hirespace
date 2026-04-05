@@ -72,7 +72,6 @@ export default function ProposalModal({ worker, employer, onClose, onSend }) {
                   <option>1–2 weeks</option>
                   <option>1 month</option>
                   <option>2–3 months</option>
-                  <option>Ongoing</option>
                 </select>
               </div>
             </div>
