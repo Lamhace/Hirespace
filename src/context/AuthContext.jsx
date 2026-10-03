@@ -69,9 +69,16 @@ export function AuthProvider({ children }) {
   // ── Live workers ──────────────────────────────────────────────────────────
   useEffect(() => {
     const q = query(collection(db, "users"), where("role", "==", "worker"));
-    const unsub = onSnapshot(q, (snap) => {
-      setWorkers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setWorkers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      (err) => {
+        // Handle unauthenticated visitor state gracefully
+        console.log("Workers listing loaded in visitor mode:", err.code);
+      }
+    );
     return () => unsub();
   }, []);
 
@@ -143,6 +150,7 @@ export function AuthProvider({ children }) {
 
   // ── Auto-archive expired deals ────────────────────────────────────────────
   useEffect(() => {
+    if (!user?.uid) return;
     const checkDeals = async () => {
       try {
         const q    = query(collection(db, "proposals"), where("status", "==", "accepted"));
