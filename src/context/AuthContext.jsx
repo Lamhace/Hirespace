@@ -510,9 +510,33 @@ export function AuthProvider({ children }) {
 
   // ── Escrow ────────────────────────────────────────────────────────────────
   const depositEscrow = async (escrowData) => {
+    if (profile?.isDemo) {
+      localStorage.setItem(`hs_demo_escrow_${escrowData.proposalId}`, JSON.stringify(escrowData));
+      return;
+    }
     await setDoc(doc(db, "escrows", escrowData.proposalId), { ...escrowData, updatedAt:serverTimestamp() }, { merge:true });
   };
   const getEscrow = async (proposalId) => {
+    if (profile?.isDemo) {
+      const stored = localStorage.getItem(`hs_demo_escrow_${proposalId}`);
+      if (stored) return JSON.parse(stored);
+      return {
+        proposalId,
+        amount: 185000,
+        currency: "NGN",
+        status: "held",
+        workerName: "Emeka Obi",
+        employerName: "Tunde Balogun",
+        depositedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        milestonePlan: "3_stage",
+        milestones: [
+          { id: 1, name: "Stage 1: Mobilization & Materials", pct: 40, amount: 74000, released: true, releasedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+          { id: 2, name: "Stage 2: Conduit Pipe Inspection", pct: 30, amount: 55500, released: false },
+          { id: 3, name: "Stage 3: Inverter Hookup & Sign-Off", pct: 30, amount: 55500, released: false },
+        ],
+        releasedAmount: 74000,
+      };
+    }
     const snap = await getDoc(doc(db, "escrows", proposalId));
     return snap.exists() ? snap.data() : null;
   };
