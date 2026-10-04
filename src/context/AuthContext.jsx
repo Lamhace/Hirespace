@@ -40,6 +40,14 @@ function setLastRead(uid, proposalId, ts) {
   localStorage.setItem(`hs_lastread_${uid}_${proposalId}`, ts.toString());
 }
 
+export const NIGERIAN_HUBS = [
+  { name: "Ikeja (Mainland Hub)", label: "Ikeja", lat: 6.5954, lng: 3.3432 },
+  { name: "Lekki Phase 1 (Island Hub)", label: "Lekki", lat: 6.4474, lng: 3.4731 },
+  { name: "Victoria Island", label: "VI", lat: 6.4281, lng: 3.4219 },
+  { name: "Surulere (Central)", label: "Surulere", lat: 6.4969, lng: 3.3592 },
+  { name: "Yaba (Tech & Commercial)", label: "Yaba", lat: 6.5095, lng: 3.3711 },
+];
+
 const SEED_WORKERS = [
   {
     id: "seed-w1",
@@ -49,6 +57,9 @@ const SEED_WORKERS = [
     role: "worker",
     category: "Electrician",
     location: "Ikeja, Lagos",
+    lat: 6.5954,
+    lng: 3.3432,
+    area: "Ikeja",
     rate: 6500,
     currency: "NGN",
     available: true,
@@ -67,6 +78,9 @@ const SEED_WORKERS = [
     role: "worker",
     category: "Interior Decorator",
     location: "Lekki Phase 1, Lagos",
+    lat: 6.4474,
+    lng: 3.4731,
+    area: "Lekki Phase 1",
     rate: 8500,
     currency: "NGN",
     available: true,
@@ -85,6 +99,9 @@ const SEED_WORKERS = [
     role: "worker",
     category: "Plumber",
     location: "Surulere, Lagos",
+    lat: 6.4969,
+    lng: 3.3592,
+    area: "Surulere",
     rate: 5000,
     currency: "NGN",
     available: true,
@@ -103,6 +120,9 @@ const SEED_WORKERS = [
     role: "worker",
     category: "House Cleaner",
     location: "Yaba, Lagos",
+    lat: 6.5095,
+    lng: 3.3711,
+    area: "Yaba",
     rate: 4000,
     currency: "NGN",
     available: true,
@@ -403,6 +423,10 @@ export function AuthProvider({ children }) {
         reviewCount: 38,
         bio: "Certified residential & commercial electrician with 6+ years experience. Specializes in distribution boxes, solar inverter setups, and conduit wiring.",
         skills: ["Electrician", "Solar Inverters", "Conduit Wiring", "Fault Finding"],
+        lat: 6.5954,
+        lng: 3.3432,
+        area: "Ikeja",
+        locationEnabled: true,
         isDemo: true,
       };
       setUser(demoUser);
@@ -424,6 +448,10 @@ export function AuthProvider({ children }) {
         role: "employer",
         company: "Balogun Construction & Properties Ltd",
         location: "Victoria Island, Lagos",
+        lat: 6.4281,
+        lng: 3.4219,
+        area: "Victoria Island",
+        locationEnabled: true,
         isDemo: true,
       };
       setUser(demoUser);

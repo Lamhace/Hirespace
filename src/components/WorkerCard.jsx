@@ -41,8 +41,13 @@ export default function WorkerCard({ worker, distance }) {
             </div>
             <div className={styles.location}>
               📍 {worker.location}
-              {distance && <span className={styles.distance}> · {distance} away</span>}
             </div>
+            {distance && (
+              <div className={styles.proximityBadge}>
+                <span className={styles.proximityPulse} />
+                <span>⚡ {distance} away · Same-Day Dispatch</span>
+              </div>
+            )}
             {/* Star rating */}
             {worker.reviewCount > 0 && (
               <div className={styles.rating}>
@@ -90,7 +95,19 @@ export default function WorkerCard({ worker, distance }) {
           </button>
         </div>
 
-        <button className={styles.hireBtn} onClick={() => setShowModal(true)}>Contact Worker →</button>
+        <div className={styles.cardActions}>
+          <button className={styles.hireBtn} onClick={() => setShowModal(true)}>Contact Worker →</button>
+          {distance && (
+            <button
+              type="button"
+              className={styles.urgentDispatchBtn}
+              onClick={() => setShowModal(true)}
+              title="Request same-day fast dispatch"
+            >
+              ⚡ Instant Request
+            </button>
+          )}
+        </div>
       </div>
 
       {showPowModal && (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, NIGERIAN_HUBS } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import ChatBox from "../components/ChatBox";
 import Avatar from "../components/Avatar";
@@ -34,9 +34,22 @@ export default function WorkerDash() {
         await updateProfile({ lat: pos.coords.latitude, lng: pos.coords.longitude, locationEnabled: true });
         setLocLoading(false);
       },
-      () => { setLocError("Location access denied. Please allow location in your browser settings."); setLocLoading(false); },
+      () => { setLocError("Location access denied. Please allow location in your browser settings or select an Area Hub."); setLocLoading(false); },
       { timeout: 10000 }
     );
+  };
+
+  const setHubLocation = async (hub) => {
+    setLocLoading(true);
+    setLocError("");
+    await updateProfile({
+      lat: hub.lat,
+      lng: hub.lng,
+      area: hub.label,
+      locationEnabled: true,
+      location: `${hub.name}`
+    });
+    setLocLoading(false);
   };
 
   const disableLocation = async () => {
@@ -236,22 +249,64 @@ export default function WorkerDash() {
                   <div className={styles.divider} />
                 </>
               )}
-              <div className={styles.locationSection}>
-                <label>📍 Location visibility</label>
-                <p className={styles.locDesc}>Enable location so nearby employers can find you more easily.</p>
-                {profile.locationEnabled ? (
-                  <div className={styles.locEnabled}>
-                    <span className={styles.locOnTag}>✓ Location enabled — employers can find you nearby</span>
-                    <button className={styles.locOffBtn} onClick={disableLocation}>Turn off</button>
+              <div className={styles.beaconCard}>
+                <div className={styles.beaconHeader}>
+                  <div className={styles.beaconLeft}>
+                    <span className={`${styles.beaconPulse} ${profile.locationEnabled ? styles.pulseActive : ""}`}>
+                      📡
+                    </span>
+                    <div>
+                      <div className={styles.beaconTitle}>
+                        {profile.locationEnabled ? "Live Proximity Beacon: ACTIVE" : "Proximity Beacon: OFF"}
+                      </div>
+                      <p className={styles.beaconSubtitle}>
+                        {profile.locationEnabled
+                          ? `Broadcasting presence near ${profile.location || "Lagos"}. Nearby employers can discover you within 5-35km.`
+                          : "Enable your location or pick an active Hub so nearby employers can find you for instant same-day work."}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className={styles.locDisabled}>
-                    {locError && <p className={styles.locError}>{locError}</p>}
-                    <button className={styles.locEnableBtn} onClick={enableLocation} disabled={locLoading}>
-                      {locLoading ? "Detecting location..." : "📍 Enable my location"}
+                  {profile.locationEnabled && (
+                    <button className={styles.beaconOffBtn} onClick={disableLocation}>
+                      Turn Off Beacon
                     </button>
+                  )}
+                </div>
+
+                {/* Hub Selection row */}
+                <div className={styles.beaconHubs}>
+                  <span className={styles.beaconHubsLabel}>Active Work Area:</span>
+                  <div className={styles.beaconHubPills}>
+                    <button
+                      type="button"
+                      className={`${styles.beaconHubPill} ${profile.locationEnabled && !profile.location?.includes("Hub") && !profile.location?.includes("Lekki") && !profile.location?.includes("Victoria") && !profile.location?.includes("Surulere") && !profile.location?.includes("Yaba") && !profile.location?.includes("Ikeja") ? styles.beaconHubPillActive : ""}`}
+                      onClick={enableLocation}
+                      disabled={locLoading}
+                    >
+                      {locLoading ? "Detecting..." : "📍 Auto-Detect GPS"}
+                    </button>
+                    {NIGERIAN_HUBS.map((hub) => {
+                      const isActive =
+                        profile.locationEnabled &&
+                        (profile.area === hub.label ||
+                          profile.location?.includes(hub.label) ||
+                          profile.location?.includes(hub.name));
+                      return (
+                        <button
+                          key={hub.label}
+                          type="button"
+                          className={`${styles.beaconHubPill} ${isActive ? styles.beaconHubPillActive : ""}`}
+                          onClick={() => setHubLocation(hub)}
+                          disabled={locLoading}
+                        >
+                          {hub.label}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
+
+                {locError && <p className={styles.locError}>{locError}</p>}
               </div>
             </div>
 

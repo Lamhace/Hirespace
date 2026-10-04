@@ -257,3 +257,145 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* ── PROXIMITY RADAR STYLES ── */
+.radarBar {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.radarTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.radarStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.radarPulse {
+  font-size: 1.3rem;
+  animation: pulseBeacon 2s infinite ease-in-out;
+}
+
+@keyframes pulseBeacon {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.radarTitle {
+  display: block;
+  font-family: var(--display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+.radarArea {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--muted2);
+  margin-top: 0.15rem;
+}
+
+.radarArea strong {
+  color: #f1f5f9;
+}
+
+.radiusControl {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.kmSelect {
+  background: #080c14;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 8px;
+  color: #38bdf8;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: var(--mono);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kmSelect:hover {
+  border-color: #38bdf8;
+}
+
+.hubSelectorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+}
+
+.hubLabel {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hubPills {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.hubPill {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.65);
+  color: var(--muted2);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.hubPill:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+  color: #fff;
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.hubActive {
+  background: rgba(6, 182, 212, 0.2) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.locError {
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 0.6rem;
+}
+

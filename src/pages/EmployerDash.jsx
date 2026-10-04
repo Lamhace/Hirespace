@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, NIGERIAN_HUBS } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import WorkerCard from "../components/WorkerCard";
 import Avatar from "../components/Avatar";
@@ -26,11 +26,16 @@ export default function EmployerDash() {
   const [activeChat,   setActiveChat]   = useState(null);
   const [reviewProposal,  setReviewProposal]  = useState(null);
   const [disputeProposal, setDisputeProposal] = useState(null);
-  const [location,     setLocation]     = useState(null);
+  const [activeHub,    setActiveHub]    = useState(profile?.area || "Victoria Island");
+  const [location,     setLocation]     = useState(
+    profile?.lat && profile?.lng
+      ? { lat: profile.lat, lng: profile.lng, name: profile.area || profile.location || "Victoria Island" }
+      : { lat: 6.4281, lng: 3.4219, name: "Victoria Island" }
+  );
   const [locLoading,   setLocLoading]   = useState(false);
   const [locError,     setLocError]     = useState("");
-  const [nearbyOnly,   setNearbyOnly]   = useState(false);
-  const [nearbyKm,     setNearbyKm]     = useState(10);
+  const [nearbyOnly,   setNearbyOnly]   = useState(true);
+  const [nearbyKm,     setNearbyKm]     = useState(15);
 
   if (!profile) return null;
 
@@ -38,20 +43,36 @@ export default function EmployerDash() {
   const activeDeals   = myProposals.filter((p) => p.status === "accepted");
   const archivedDeals = myProposals.filter((p) => p.status === "archived");
 
+  const handleSelectHub = (hub) => {
+    setActiveHub(hub.label);
+    setLocation({ lat: hub.lat, lng: hub.lng, name: hub.name });
+    setNearbyOnly(true);
+    setLocError("");
+  };
+
   const requestLocation = () => {
     setLocLoading(true);
     setLocError("");
+    if (!navigator.geolocation) {
+      setLocError("GPS not supported in this browser. Active area: " + (location?.name || "Lagos"));
+      setLocLoading(false);
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Live GPS Location" });
+        setActiveHub("GPS");
         setLocLoading(false);
         setNearbyOnly(true);
       },
       () => {
-        setLocError("Location access denied. You can still browse all workers.");
+        setLocError("Location access denied or unavailable. Switched to Lagos Island hub.");
+        setLocation({ lat: 6.4281, lng: 3.4219, name: "Victoria Island" });
+        setActiveHub("VI");
         setLocLoading(false);
+        setNearbyOnly(true);
       },
-      { timeout: 10000 }
+      { timeout: 8000 }
     );
   };
 
@@ -69,15 +90,18 @@ export default function EmployerDash() {
         w.skills?.some((s) => s.toLowerCase().includes(search.toLowerCase()));
       const matchJob    = !filterJob || w.skills?.includes(filterJob);
       const dist        = getDistance(w);
-      const matchNearby = !nearbyOnly || !location || dist === null || dist <= nearbyKm;
+      const matchNearby = !nearbyOnly || dist === null || dist <= nearbyKm;
       return matchSearch && matchJob && matchNearby;
     })
     .map((w) => ({ ...w, _distance: getDistance(w) }))
-    .sort((a, b) =>
-      nearbyOnly && a._distance !== null && b._distance !== null
-        ? a._distance - b._distance
-        : 0
-    );
+    .sort((a, b) => {
+      if (a._distance !== null && b._distance !== null) {
+        return a._distance - b._distance;
+      }
+      if (a._distance !== null) return -1;
+      if (b._distance !== null) return 1;
+      return 0;
+    });
 
   return (
     <div className={styles.page}>
@@ -122,51 +146,67 @@ export default function EmployerDash() {
         {/* ── BROWSE TAB ── */}
         {tab === "browse" && (
           <>
-            <div className={styles.locationBar}>
-              {!location ? (
-                <div className={styles.locationPrompt}>
+            {/* PROXIMITY RADAR BAR */}
+            <div className={styles.radarBar}>
+              <div className={styles.radarTopRow}>
+                <div className={styles.radarStatus}>
+                  <span className={styles.radarPulse}>📡</span>
                   <div>
-                    <p className={styles.locTitle}>📍 Find nearby workers</p>
-                    <p className={styles.locSub}>Enable location to see workers close to you — completely optional.</p>
+                    <span className={styles.radarTitle}>Proximity Radar: ACTIVE</span>
+                    <span className={styles.radarArea}>
+                      Browsing verified artisans near <strong>{location?.name || "Lagos"}</strong>
+                    </span>
                   </div>
-                  <button className={styles.locBtn} onClick={requestLocation} disabled={locLoading}>
-                    {locLoading ? "Detecting..." : "Enable Location"}
-                  </button>
                 </div>
-              ) : (
-                <div className={styles.locationActive}>
-                  <span className={styles.locOn}>📍 Location on</span>
-                  <div className={styles.nearbyToggle}>
-                    <label className={styles.toggle}>
-                      <input
-                        type="checkbox"
-                        checked={nearbyOnly}
-                        onChange={(e) => setNearbyOnly(e.target.checked)}
-                      />
-                      <span className={styles.slider}></span>
-                    </label>
-                    <span>Nearby only</span>
-                    {nearbyOnly && (
-                      <select
-                        className={styles.kmSelect}
-                        value={nearbyKm}
-                        onChange={(e) => setNearbyKm(Number(e.target.value))}
-                      >
-                        <option value={5}>Within 5km</option>
-                        <option value={10}>Within 10km</option>
-                        <option value={25}>Within 25km</option>
-                        <option value={50}>Within 50km</option>
-                      </select>
-                    )}
-                  </div>
-                  <button
-                    className={styles.locOffBtn}
-                    onClick={() => { setLocation(null); setNearbyOnly(false); }}
+
+                <div className={styles.radiusControl}>
+                  <label>Radius:</label>
+                  <select
+                    className={styles.kmSelect}
+                    value={nearbyKm}
+                    onChange={(e) => setNearbyKm(Number(e.target.value))}
                   >
-                    Turn off
+                    <option value={5}>Within 5km (Same neighborhood)</option>
+                    <option value={10}>Within 10km (District)</option>
+                    <option value={15}>Within 15km (Metropolitan)</option>
+                    <option value={35}>Within 35km (All Lagos)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Quick Area Hub Selector */}
+              <div className={styles.hubSelectorRow}>
+                <span className={styles.hubLabel}>Area Hubs:</span>
+                <div className={styles.hubPills}>
+                  <button
+                    type="button"
+                    className={`${styles.hubPill} ${activeHub === "GPS" ? styles.hubActive : ""}`}
+                    onClick={requestLocation}
+                    disabled={locLoading}
+                  >
+                    {locLoading ? "Locating..." : "📍 My GPS"}
+                  </button>
+                  {NIGERIAN_HUBS.map((hub) => (
+                    <button
+                      key={hub.label}
+                      type="button"
+                      className={`${styles.hubPill} ${activeHub === hub.label ? styles.hubActive : ""}`}
+                      onClick={() => handleSelectHub(hub)}
+                    >
+                      {hub.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`${styles.hubPill} ${!nearbyOnly ? styles.hubActive : ""}`}
+                    onClick={() => setNearbyOnly(!nearbyOnly)}
+                    style={{ marginLeft: "auto" }}
+                  >
+                    {nearbyOnly ? "Nearby Filter: ON ✓" : "Show All"}
                   </button>
                 </div>
-              )}
+              </div>
+
               {locError && <p className={styles.locError}>{locError}</p>}
             </div>
 
