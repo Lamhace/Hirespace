@@ -8,7 +8,7 @@ const LOCAL_JOBS = ["Plumber","Electrician","House Cleaner","Interior Decorator"
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, loginAsDemo } = useAuth();
 
   // Block homepage if already logged in
   useEffect(() => {
@@ -24,6 +24,14 @@ export default function Landing() {
         <nav className={styles.nav}>
           <div className={styles.logo}>HireSpace</div>
           <div className={styles.navRight}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { loginAsDemo("employer"); navigate("/employer"); }}
+              style={{ color: "#38bdf8", border: "1px solid rgba(56,189,248,0.3)" }}
+            >
+              ⚡ Instant Demo
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>Log in</Button>
             <Button variant="primary" size="sm" onClick={() => navigate("/signup")}>Sign up</Button>
           </div>
@@ -45,6 +53,18 @@ export default function Landing() {
           <div className={styles.cta}>
             <Button variant="primary" size="lg" onClick={() => navigate("/signup?role=worker")}>Join as Worker</Button>
             <Button variant="outline" size="lg" onClick={() => navigate("/signup?role=employer")}>Hire Someone</Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => { loginAsDemo("employer"); navigate("/employer"); }}
+              style={{
+                border: "1px dashed rgba(56,189,248,0.5)",
+                color: "#38bdf8",
+                background: "rgba(56,189,248,0.06)"
+              }}
+            >
+              ⚡ Explore Demo →
+            </Button>
           </div>
           <div className={styles.skillCloud}>
             {LOCAL_JOBS.map((s) => <span key={s} className={styles.cloudTag}>{s}</span>)}

@@ -40,10 +40,85 @@ function setLastRead(uid, proposalId, ts) {
   localStorage.setItem(`hs_lastread_${uid}_${proposalId}`, ts.toString());
 }
 
+const SEED_WORKERS = [
+  {
+    id: "seed-w1",
+    uid: "seed-w1",
+    fullName: "Emeka Obi",
+    initials: "EO",
+    role: "worker",
+    category: "Electrician",
+    location: "Ikeja, Lagos",
+    rate: 6500,
+    currency: "NGN",
+    available: true,
+    verifiedBadge: "NIN & Guild Verified",
+    trustTier: 3,
+    avgRating: 4.9,
+    reviewCount: 38,
+    bio: "Certified residential & commercial electrician with 6+ years experience. Specializes in distribution boxes, solar inverter setups, and conduit wiring.",
+    skills: ["Electrician", "Solar Inverters", "Conduit Wiring", "Fault Finding"],
+  },
+  {
+    id: "seed-w2",
+    uid: "seed-w2",
+    fullName: "Amina Yusuf",
+    initials: "AY",
+    role: "worker",
+    category: "Interior Decorator",
+    location: "Lekki Phase 1, Lagos",
+    rate: 8500,
+    currency: "NGN",
+    available: true,
+    verifiedBadge: "ID & Guild Cleared",
+    trustTier: 3,
+    avgRating: 5.0,
+    reviewCount: 29,
+    bio: "Modern interior designer & space planner. Residential remodels, false ceiling lighting, wallpaper, and custom cabinetry.",
+    skills: ["Interior Decorator", "Space Planning", "Lighting Design", "Wall Treatment"],
+  },
+  {
+    id: "seed-w3",
+    uid: "seed-w3",
+    fullName: "Sunday Eze",
+    initials: "SE",
+    role: "worker",
+    category: "Plumber",
+    location: "Surulere, Lagos",
+    rate: 5000,
+    currency: "NGN",
+    available: true,
+    verifiedBadge: "Phone & ID Verified",
+    trustTier: 2,
+    avgRating: 4.8,
+    reviewCount: 54,
+    bio: "Specialist in high-pressure water pumps, borehole piping, drainage clearance, and modern bathroom sanitary fittings.",
+    skills: ["Plumber", "Water Pumps", "Pipe Installation", "Drainage"],
+  },
+  {
+    id: "seed-w4",
+    uid: "seed-w4",
+    fullName: "Blessing Adeyemi",
+    initials: "BA",
+    role: "worker",
+    category: "House Cleaner",
+    location: "Yaba, Lagos",
+    rate: 4000,
+    currency: "NGN",
+    available: true,
+    verifiedBadge: "ID & Background Cleared",
+    trustTier: 2,
+    avgRating: 4.9,
+    reviewCount: 42,
+    bio: "Deep cleaning expert for post-construction, move-in/move-out apartments, and weekly fumigation. Brings full industrial equipment.",
+    skills: ["House Cleaner", "Deep Cleaning", "Post-Construction", "Fumigation"],
+  },
+];
+
 export function AuthProvider({ children }) {
   const [user,          setUser]          = useState(null);
   const [profile,       setProfile]       = useState(null);
-  const [workers,       setWorkers]       = useState([]);
+  const [workers,       setWorkers]       = useState(SEED_WORKERS);
   const [proposals,     setProposals]     = useState([]);
   const [loading,       setLoading]       = useState(true);
   // hasNewMessage: { [proposalId]: boolean }
@@ -59,7 +134,10 @@ export function AuthProvider({ children }) {
           setProfile(snap.exists() ? { uid: fu.uid, ...snap.data() } : null);
         } catch (e) { console.error(e); setProfile(null); }
       } else {
-        setUser(null); setProfile(null); setHasNewMessage({});
+        // If not in demo mode, clear state
+        setUser((prev) => (prev?.uid?.startsWith("demo-") ? prev : null));
+        setProfile((prev) => (prev?.uid?.startsWith("demo-") ? prev : null));
+        setHasNewMessage({});
       }
       setLoading(false);
     });
@@ -72,11 +150,17 @@ export function AuthProvider({ children }) {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setWorkers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const liveWorkers = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const liveKeys = new Set(liveWorkers.map((w) => w.email || w.uid || w.id));
+        const nonDuplicateSeeds = SEED_WORKERS.filter(
+          (sw) => !liveKeys.has(sw.email) && !liveKeys.has(sw.uid) && !liveKeys.has(sw.id)
+        );
+        setWorkers([...liveWorkers, ...nonDuplicateSeeds]);
       },
       (err) => {
         // Handle unauthenticated visitor state gracefully
         console.log("Workers listing loaded in visitor mode:", err.code);
+        setWorkers(SEED_WORKERS);
       }
     );
     return () => unsub();
@@ -85,6 +169,64 @@ export function AuthProvider({ children }) {
   // ── Live proposals ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid || !profile?.role) return;
+
+    if (profile.isDemo) {
+      if (profile.role === "worker") {
+        setProposals([
+          {
+            id: "demo-prop-1",
+            workerId: "demo-worker-emeka",
+            workerName: "Emeka Obi",
+            employerId: "demo-employer-tunde",
+            employerName: "Tunde Balogun",
+            projectTitle: "3-Bedroom Duplex Conduit Wiring & Solar Setup",
+            scope: "Full electrical conduit pipe installation and inverter switchboard hookup in Lekki Phase 1.",
+            price: 185000,
+            currency: "NGN",
+            status: "accepted",
+            timeline: "2 Weeks",
+            acceptedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            escrowFunded: true,
+            createdAt: { seconds: Math.floor((Date.now() - 5 * 24 * 60 * 60 * 1000) / 1000) },
+          },
+          {
+            id: "demo-prop-2",
+            workerId: "demo-worker-emeka",
+            workerName: "Emeka Obi",
+            employerId: "demo-employer-kemi",
+            employerName: "Kemi Adeleke",
+            projectTitle: "Fault Finding & Distribution Board Upgrade",
+            scope: "Replace old fuse box with 63A MCB and diagnose tripping circuit breakers.",
+            price: 45000,
+            currency: "NGN",
+            status: "pending",
+            timeline: "3 Days",
+            createdAt: { seconds: Math.floor((Date.now() - 1 * 24 * 60 * 60 * 1000) / 1000) },
+          }
+        ]);
+      } else {
+        setProposals([
+          {
+            id: "demo-prop-1",
+            workerId: "seed-w1",
+            workerName: "Emeka Obi",
+            employerId: "demo-employer-tunde",
+            employerName: "Tunde Balogun",
+            projectTitle: "Commercial Office Backup Power Wiring",
+            scope: "Inverter integration, backup line installation and load balancing.",
+            price: 120000,
+            currency: "NGN",
+            status: "accepted",
+            timeline: "1 Week",
+            acceptedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            escrowFunded: true,
+            createdAt: { seconds: Math.floor((Date.now() - 4 * 24 * 60 * 60 * 1000) / 1000) },
+          }
+        ]);
+      }
+      return;
+    }
+
     const field = profile.role === "worker" ? "workerId" : "employerId";
     const q = query(collection(db, "proposals"), where(field, "==", user.uid));
     const unsub = onSnapshot(q, (snap) => {
@@ -93,7 +235,7 @@ export function AuthProvider({ children }) {
       setProposals(docs);
     });
     return () => unsub();
-  }, [user?.uid, profile?.role]);
+  }, [user?.uid, profile?.role, profile?.isDemo]);
 
   // ── Global notification listener ──────────────────────────────────────────
   // Key rule: a notification shows if:
@@ -234,13 +376,77 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // ── Demo login ────────────────────────────────────────────────────────────
+  const loginAsDemo = (demoRole = "worker") => {
+    if (demoRole === "worker") {
+      const demoUser = {
+        uid: "demo-worker-emeka",
+        email: "emeka.demo@hirespace.ng",
+        displayName: "Emeka Obi",
+      };
+      const demoProfile = {
+        uid: "demo-worker-emeka",
+        email: "emeka.demo@hirespace.ng",
+        fullName: "Emeka Obi",
+        firstName: "Emeka",
+        lastName: "Obi",
+        initials: "EO",
+        role: "worker",
+        category: "Electrician",
+        location: "Ikeja, Lagos",
+        rate: 6500,
+        currency: "NGN",
+        available: true,
+        verifiedBadge: "NIN & Guild Verified",
+        trustTier: 3,
+        avgRating: 4.9,
+        reviewCount: 38,
+        bio: "Certified residential & commercial electrician with 6+ years experience. Specializes in distribution boxes, solar inverter setups, and conduit wiring.",
+        skills: ["Electrician", "Solar Inverters", "Conduit Wiring", "Fault Finding"],
+        isDemo: true,
+      };
+      setUser(demoUser);
+      setProfile(demoProfile);
+      return { success: true, role: "worker" };
+    } else {
+      const demoUser = {
+        uid: "demo-employer-tunde",
+        email: "tunde.demo@hirespace.ng",
+        displayName: "Tunde Balogun",
+      };
+      const demoProfile = {
+        uid: "demo-employer-tunde",
+        email: "tunde.demo@hirespace.ng",
+        fullName: "Tunde Balogun",
+        firstName: "Tunde",
+        lastName: "Balogun",
+        initials: "TB",
+        role: "employer",
+        company: "Balogun Construction & Properties Ltd",
+        location: "Victoria Island, Lagos",
+        isDemo: true,
+      };
+      setUser(demoUser);
+      setProfile(demoProfile);
+      return { success: true, role: "employer" };
+    }
+  };
+
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      // Ignored for demo sessions
+    }
     setUser(null); setProfile(null); setHasNewMessage({});
   };
 
   // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = async (updates) => {
+    if (profile?.isDemo) {
+      setProfile((prev) => ({ ...prev, ...updates }));
+      return;
+    }
     if (!user?.uid) return;
     await updateDoc(doc(db, "users", user.uid), updates);
     setProfile((prev) => ({ ...prev, ...updates }));
@@ -248,9 +454,29 @@ export function AuthProvider({ children }) {
 
   // ── Proposals ─────────────────────────────────────────────────────────────
   const sendProposal = async (proposal) => {
+    if (profile?.isDemo) {
+      const newProp = {
+        id: `demo-prop-${Date.now()}`,
+        ...proposal,
+        status: "pending",
+        createdAt: { seconds: Math.floor(Date.now() / 1000) },
+      };
+      setProposals((prev) => [newProp, ...prev]);
+      return;
+    }
     await addDoc(collection(db, "proposals"), { ...proposal, status:"pending", createdAt:serverTimestamp() });
   };
   const respondToProposal = async (proposalId, status) => {
+    if (profile?.isDemo) {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? { ...p, status, ...(status === "accepted" ? { acceptedAt: new Date().toISOString() } : {}) }
+            : p
+        )
+      );
+      return;
+    }
     const updates = { status };
     if (status === "accepted") updates.acceptedAt = serverTimestamp();
     await updateDoc(doc(db, "proposals", proposalId), updates);
@@ -340,7 +566,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, profile, workers, proposals, loading,
       totalUnread, hasNewMessage, markChatRead,
-      signup, login, logout, updateProfile,
+      signup, login, loginAsDemo, logout, updateProfile,
       sendProposal, respondToProposal, getWorkerProposals, getEmployerProposals,
       depositEscrow, getEscrow,
       submitReview, getWorkerReviews,

@@ -25,6 +25,11 @@ export default function WorkerCard({ worker, distance }) {
               <div className={styles.name}>{worker.fullName}</div>
               {worker.available && <span className={styles.availBadge}>Available</span>}
             </div>
+            {/* Trust & Verification Badge */}
+            <div className={styles.trustBadge}>
+              <span className={styles.trustIcon}>{worker.trustTier === 3 ? "🛡️" : "✓"}</span>
+              <span>{worker.verifiedBadge || "ID & Phone Verified"}</span>
+            </div>
             <div className={styles.location}>
               📍 {worker.location}
               {distance && <span className={styles.distance}> · {distance} away</span>}

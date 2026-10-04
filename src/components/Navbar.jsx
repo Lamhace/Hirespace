@@ -38,7 +38,24 @@ export default function Navbar() {
         />
 
         <div className={styles.nameBlock}>
-          <div className={styles.name}>{profile?.fullName || "User"}</div>
+          <div className={styles.name}>
+            {profile?.fullName || "User"}
+            {profile?.isDemo && (
+              <span style={{
+                marginLeft: "6px",
+                fontSize: "0.6rem",
+                padding: "1px 6px",
+                background: "rgba(6,182,212,0.15)",
+                color: "#38bdf8",
+                borderRadius: "10px",
+                border: "1px solid rgba(6,182,212,0.35)",
+                fontWeight: 600,
+                letterSpacing: "0.04em"
+              }}>
+                DEMO
+              </span>
+            )}
+          </div>
           <div
             className={styles.badge}
             style={isEmployer ? { color:"var(--purple)", background:"var(--purple-dim)", borderColor:"var(--border-p)" } : {}}

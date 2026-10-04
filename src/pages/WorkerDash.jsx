@@ -77,6 +77,23 @@ export default function WorkerDash() {
                 <div className={styles.profileInfo}>
                   <h3>{profile.fullName}</h3>
                   <p>📍 {profile.location}</p>
+                  {profile.verifiedBadge && (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      fontSize: "0.68rem",
+                      color: "#38bdf8",
+                      background: "rgba(56, 189, 248, 0.1)",
+                      border: "1px solid rgba(56, 189, 248, 0.3)",
+                      padding: "0.15rem 0.5rem",
+                      borderRadius: "999px",
+                      marginTop: "0.25rem",
+                      fontWeight: 600
+                    }}>
+                      🛡️ {profile.verifiedBadge}
+                    </span>
+                  )}
                 </div>
                 <div className={styles.rateBadge}>{sym}{Number(profile.rate||0).toLocaleString()}<span>/hr</span></div>
               </div>
