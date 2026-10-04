@@ -3,18 +3,21 @@ import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import ChatBox from "../components/ChatBox";
 import Avatar from "../components/Avatar";
+import ProofOfWorkModal, { getWorkerProjects } from "../components/ProofOfWorkModal";
 import styles from "./WorkerDash.module.css";
 
 export default function WorkerDash() {
   const { user, profile, getWorkerProposals, respondToProposal, updateProfile, hasNewMessage } = useAuth();
   const [tab,           setTab]           = useState("profile");
   const [activeChat,    setActiveChat]    = useState(null);
+  const [showPowModal,  setShowPowModal]  = useState(false);
   const [locLoading,    setLocLoading]    = useState(false);
   const [locError,      setLocError]      = useState("");
   const [availLoading,  setAvailLoading]  = useState(false);
 
   if (!profile) return null;
 
+  const projects  = getWorkerProjects(profile);
   const proposals = getWorkerProposals();
   const pending   = proposals.filter((p) => p.status === "pending").length;
 
@@ -128,6 +131,66 @@ export default function WorkerDash() {
                   {profile.skills?.length > 0
                     ? profile.skills.map((s) => <span key={s} className={styles.skill}>{s}</span>)
                     : <span className={styles.empty}>No categories added</span>}
+                </div>
+              </div>
+
+              <div className={styles.divider} />
+
+              {/* Proof of Work Showcase */}
+              <div style={{ marginBottom: "1.25rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
+                  <label style={{ fontFamily: "var(--mono)", fontSize: "0.68rem", color: "var(--muted2)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Verified Craftsmanship & Proof of Work ({projects.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPowModal(true)}
+                    style={{
+                      background: "rgba(6,182,212,0.1)",
+                      border: "1px solid rgba(6,182,212,0.3)",
+                      color: "var(--cyan)",
+                      padding: "0.2rem 0.6rem",
+                      borderRadius: "20px",
+                      fontSize: "0.68rem",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    View Public Portfolio →
+                  </button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+                  {projects.slice(0, 2).map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => setShowPowModal(true)}
+                      style={{
+                        position: "relative",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        height: "76px",
+                        cursor: "pointer",
+                        border: "1px solid rgba(255,255,255,0.08)"
+                      }}
+                    >
+                      <img src={p.afterImg} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{
+                        position: "absolute",
+                        bottom: 0,
+                        insetInline: 0,
+                        background: "linear-gradient(transparent, rgba(15,23,42,0.9))",
+                        padding: "4px 8px",
+                        fontSize: "0.66rem",
+                        color: "#fff",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        fontWeight: 600
+                      }}>
+                        {p.title}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -269,6 +332,12 @@ export default function WorkerDash() {
       </div>
 
       {activeChat && <ChatBox proposal={activeChat} onClose={() => setActiveChat(null)} />}
+      {showPowModal && (
+        <ProofOfWorkModal
+          worker={profile}
+          onClose={() => setShowPowModal(false)}
+        />
+      )}
     </div>
   );
 }
