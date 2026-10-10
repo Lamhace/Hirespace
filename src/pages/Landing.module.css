@@ -495,20 +495,22 @@
 
 @media (max-width: 640px) {
   .inner { padding: 0 1rem 3rem; }
-  .nav { margin-bottom: 2.5rem; }
-  .hero { margin-bottom: 3rem; }
-  .statsBar { gap: 1.5rem; }
+  .nav { padding: 1rem 0; margin-bottom: 2rem; }
+  .title { font-size: clamp(2rem, 8vw, 3rem); }
+  .sub { font-size: 0.92rem; }
+  .cta { flex-direction: column; }
+  .cta button, .cta a { width: 100%; text-align: center; justify-content: center; }
+  .statsBar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .roleCards { grid-template-columns: 1fr; }
+  .skillCloud { display: none; }
+  .calcFooter { flex-direction: column; align-items: stretch; text-align: center; }
+  .calcFooterNotice { max-width: 100%; }
 }
 
-/* ── MOBILE RESPONSIVE ── */
-@media (max-width: 640px) {
-  .inner { padding: 0 1rem 3rem; }
-  .nav   { padding: 1rem 0; margin-bottom: 2.5rem; }
-  .title { font-size: clamp(2rem,8vw,3rem); }
-  .sub   { font-size: 0.92rem; }
-  .cta   { flex-direction: column; }
-  .statsBar    { gap: 1.25rem; flex-wrap: wrap; }
-  .roleCards   { grid-template-columns: 1fr; }
-  .skillCloud  { display: none; }
+@media (max-width: 400px) {
+  .statsBar { grid-template-columns: 1fr; }
+  .timelineItem { flex-direction: column; gap: 0.5rem; }
+  .timelineTitle { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+  .timelineNum { align-self: flex-start; }
 }
+

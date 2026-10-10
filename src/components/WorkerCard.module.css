@@ -235,6 +235,14 @@
 /* Responsive */
 @media (max-width: 480px) {
   .card { padding: 1rem; }
+  .cardActions { flex-direction: column; gap: 0.45rem; }
+  .urgentDispatchBtn, .hireBtn { width: 100%; text-align: center; }
+  .footer { flex-wrap: wrap; gap: 0.5rem; }
+}
+
+@media (max-width: 360px) {
+  .top { flex-wrap: wrap; }
+  .powThumbs { grid-template-columns: 1fr; }
 }
 
 .avatarImg {

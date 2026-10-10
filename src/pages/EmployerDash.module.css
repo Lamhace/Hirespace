@@ -399,3 +399,72 @@
   margin-top: 0.6rem;
 }
 
+/* ── RESPONSIVE RADAR & DEALS ── */
+@media (max-width: 640px) {
+  .radarBar {
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+  }
+  .radarTopRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .radiusControl {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .kmSelect {
+    flex: 1;
+    max-width: 220px;
+  }
+  .hubSelectorRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .hubPills {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .hubPill {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.6rem;
+  }
+  .dealCard {
+    padding: 1rem;
+  }
+  .dealTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .dealActions {
+    width: 100%;
+  }
+  .reviewBtn, .disputeBtn, .reviewedTag, .disputedTag {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .radarTitle { font-size: 0.8rem; }
+  .radarArea { font-size: 0.72rem; }
+  .radiusControl {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .kmSelect {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+

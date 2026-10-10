@@ -113,5 +113,12 @@
   .nav    { padding: 0.75rem 1rem; }
   .name   { display: none; }
   .badge  { display: none; }
-  .logout { font-size: 0.65rem; padding: 0.3rem 0.6rem; }
+  .logout { font-size: 0.65rem; padding: 0.35rem 0.65rem; }
+  .logo   { font-size: 1rem; }
 }
+
+@media (max-width: 340px) {
+  .nav    { padding: 0.65rem 0.75rem; }
+  .right  { gap: 0.4rem; }
+}
+

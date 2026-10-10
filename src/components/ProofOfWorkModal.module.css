@@ -438,6 +438,26 @@
 
 /* Mobile */
 @media (max-width: 640px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-bottom: none;
+  }
+  .header {
+    padding: 1rem 1.25rem;
+  }
+  .body {
+    padding: 1rem 1.25rem;
+  }
+  .tabsBar {
+    padding: 0.5rem 1.25rem;
+  }
   .sideBySideGrid {
     grid-template-columns: 1fr;
   }
@@ -446,9 +466,20 @@
   }
   .footer {
     flex-direction: column-reverse;
+    padding: 0.85rem 1.25rem;
   }
   .hireProjectBtn, .closeAltBtn {
     width: 100%;
     text-align: center;
   }
 }
+
+@media (max-width: 400px) {
+  .scopeMetrics {
+    grid-template-columns: 1fr;
+  }
+  .header { padding: 0.85rem 1rem; }
+  .body { padding: 0.85rem 1rem; }
+  .singleImageCard { height: 190px; }
+}
+
